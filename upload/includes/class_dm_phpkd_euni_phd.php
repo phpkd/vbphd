@@ -34,8 +34,8 @@ require_once(DIR . '/includes/adminfunctions.php');
 * $exa->save();
 *
 * @package	PHPKD
-* @version	$Revision: 25926 $
-* @date		$Date: 2008-03-03 11:44:00 -0600 (Mon, 03 Mar 2008) $
+* @version	$Revision$
+* @date		$Date$
 */
 class vB_DataManager_PHPKD_EUNI_PhD extends vB_DataManager
 {
@@ -134,8 +134,8 @@ class vB_DataManager_PHPKD_EUNI_PhD extends vB_DataManager
 * Class to do data save/delete operations for Universities
 *
 * @package	vBulletin
-* @version	$Revision: 26665 $
-* @date		$Date: 2008-05-21 06:36:38 -0500 (Wed, 21 May 2008) $
+* @version	$Revision$
+* @date		$Date$
 */
 class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI_PhD
 {
@@ -385,8 +385,8 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 /*=================================================================================*\
 || ############################################################################### ||
 || # Version.: 1.0.0
-|| # Revision: $Revision: 8 $
-|| # Released: $Date: 2008-05-16 10:29:42 +0300 (Fri, 16 May 2008) $
+|| # Revision: $Revision$
+|| # Released: $Date$
 || ############################################################################### ||
 \*=================================================================================*/
 ?>
