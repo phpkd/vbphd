@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<navgroups product="phpkd_euni_phd" master="true">
+
+	<navgroup phrase="phpkd_euni_phd_menu" permissions="canadminuniversities" hr="true" displayorder="42">
+
+		<navoption displayorder="10">
+			<phrase>phpkd_euni_phd_options</phrase>
+			<link>options.php?do=options&dogroup=phpkd_euni_phd</link>
+		</navoption>
+
+		<navoption displayorder="20">
+			<phrase>phpkd_euni_phd_manage</phrase>
+			<link>phpkd_euni_phd.php?do=manage</link>
+		</navoption>
+
+		<navoption displayorder="30">
+			<phrase>phpkd_euni_phd_add_university</phrase>
+			<link>phpkd_euni_phd.php?do=addu</link>
+		</navoption>
+
+		<navoption displayorder="40">
+			<phrase>phpkd_euni_phd_add_college</phrase>
+			<link>phpkd_euni_phd.php?do=addc</link>
+		</navoption>
+
+		<navoption displayorder="50">
+			<phrase>phpkd_euni_phd_add_department</phrase>
+			<link>phpkd_euni_phd.php?do=addd</link>
+		</navoption>
+
+		<navoption displayorder="60">
+			<phrase>phpkd_euni_phd_add_professor</phrase>
+			<link>phpkd_euni_phd.php?do=addp</link>
+		</navoption>
+
+		<navoption displayorder="70">
+			<phrase>phpkd_euni_phd_add_item</phrase>
+			<link>phpkd_euni_phd.php?do=addi</link>
+		</navoption>
+
+		<navoption displayorder="80">
+			<phrase>phpkd_euni_phd_students</phrase>
+			<link>phpkd_euni_phd.php?do=students</link>
+		</navoption>
+
+	</navgroup>
+
+</navgroups>
+
+<!-- Version: 1.0.0 | $Revision: 8 $ | $Date: 2008-05-16 10:29:42 +0300 (Fri, 16 May 2008) $ -->

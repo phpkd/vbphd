@@ -19,7 +19,7 @@ error_reporting(E_ALL & ~E_NOTICE);
 @set_time_limit(0);
 
 // ##################### DEFINE IMPORTANT CONSTANTS #######################
-define('CVS_REVISION', '$RCSfile$ - $Revision: 8 $');
+define('CVS_REVISION', '$RCSfile$ - $Revision$');
 
 // #################### PRE-CACHE TEMPLATES AND DATA ######################
 $phrasegroups = array('phpkd_euni_phd_acp');
@@ -31,7 +31,7 @@ require_once(DIR . '/includes/adminfunctions_template.php');
 require_once(DIR . '/includes/adminfunctions_euni_phd.php');
 
 // ######################## CHECK ADMIN PERMISSIONS #######################
-if (!can_administer('canadmineuniphd'))
+if (!can_administer('canadminuniversities'))
 {
 	print_cp_no_permission();
 }
@@ -57,7 +57,7 @@ log_admin_action
 		iif($vbulletin->GPC['did'] != 0, "department id = " . $vbulletin->GPC['did']),
 		iif($vbulletin->GPC['pid'] != 0, "professor id = " . $vbulletin->GPC['pid']),
 		iif($vbulletin->GPC['iid'] != 0, "item id = " . $vbulletin->GPC['iid']),
-		iif($vbulletin->GPC['sid'] != 0, "student id = " . $vbulletin->GPC['sid']),
+		iif($vbulletin->GPC['sid'] != 0, "student id = " . $vbulletin->GPC['sid'])
 	)
 );
 
@@ -69,300 +69,147 @@ print_cp_header($vbphrase['phpkd_euni_phd_manager']);
 
 if (empty($_REQUEST['do']))
 {
-	$_REQUEST['do'] = 'modify';
+	$_REQUEST['do'] = 'manage';
 }
 
 ($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_start')) ? eval($hook) : false;
 
 // ###################### Start add #######################
-if ($_REQUEST['do'] == 'add' OR $_REQUEST['do'] == 'edit')
+if ($_REQUEST['do'] == 'addu' OR $_REQUEST['do'] == 'editu')
 {
 	$vbulletin->input->clean_array_gpc('r', array(
-		'forumid'			=> TYPE_UINT,
-		'defaultforumid'	=> TYPE_UINT,
-		'parentid'			=> TYPE_UINT
+		'uid'  => TYPE_UINT,
+		'duid' => TYPE_UINT
 	));
 
-	if ($_REQUEST['do'] == 'add')
+	if ($_REQUEST['do'] == 'addu')
 	{
-		// get a list of other usergroups to base this one off of
-		print_form_header('forum', 'add');
-		print_description_row(construct_table_help_button('defaultforumid') . '<b>' . $vbphrase['create_forum_based_off_of_forum'] . '</b> <select name="defaultforumid" tabindex="1" class="bginput">' . construct_forum_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
+		// get a list of other universities to base this one off of
+		print_form_header('phpkd_euni_phd', 'addu');
+		print_description_row(construct_table_help_button('duid') . '<b>' . $vbphrase['phpkd_euni_phd_create_university_based_off_of_university'] . '</b> <select name="duid" tabindex="1" class="bginput">' . construct_university_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
 		print_table_footer();
 		// Set Defaults;
-		$forum = array(
+		$university = array(
 			'title' => '',
 			'description' => '',
 			'link' => '',
+			'logo' => '',
 			'displayorder' => 1,
-			'daysprune' => -1,
-			'parentid' => $vbulletin->GPC['parentid'],
 			'showprivate' => 0,
-			'newthreademail' => '',
-			'newpostemail' => '',
-			'moderatenewpost' => 0,
-			'moderatenewthread' => 0,
-			'moderateattach' => 0,
 			'styleid' => '',
 			'styleoverride' => 0,
 			'password' => '',
 			'canhavepassword' => 1,
-			'cancontainthreads' => 1,
+			'canhavecontent' => 1,
 			'active' => 1,
-			'allowposting' => 1,
-			'indexposts' => 1,
-			'allowhtml' => 0,
-			'allowbbcode' => 1,
-			'allowimages' => 1,
-			'allowsmilies' => 1,
-			'allowicons' => 1,
-			'allowratings' => 1,
-			'countposts' => 1,
-			'showonforumjump' => 1,
-			'defaultsortfield' => 'lastpost',
-			'defaultsortorder' => 'desc',
-   			'imageprefix' => ''
+			'countcontent' => 1,
+			'showonuniversityjump' => 1
 		);
 
-		if (!empty($vbulletin->GPC['defaultforumid']))
+		if (!empty($vbulletin->GPC['duid']))
 		{
-			$newforum = fetch_foruminfo($vbulletin->GPC['defaultforumid']);
-			foreach (array_keys($forum) AS $title)
+			$newuniversity = fetch_universityinfo($vbulletin->GPC['duid']);
+			foreach (array_keys($university) AS $title)
 			{
-				$forum["$title"] = $newforum["$title"];
+				$university["$title"] = $newuniversity["$title"];
 			}
 		}
 
-		($hook = vBulletinHook::fetch_hook('forumadmin_add_default')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_add_default')) ? eval($hook) : false;
 
-		print_form_header('forum', 'update');
-		print_table_header($vbphrase['add_new_forum']);
+		print_form_header('phpkd_euni_phd', 'updateu');
+		print_table_header($vbphrase['phpkd_euni_phd_add_new_university']);
 	}
 	else
 	{
-		if (!($forum = fetch_foruminfo($vbulletin->GPC['forumid'], false)))
+		if (!($university = fetch_universityinfo($vbulletin->GPC['uid'], false)))
 		{
-			print_stop_message('invalid_forum_specified');
+			print_stop_message('phpkd_euni_phd_invalid_university_specified');
 		}
-		print_form_header('forum', 'update');
-		print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['forum'], $forum['title'], $forum['forumid']));
-		construct_hidden_code('forumid', $vbulletin->GPC['forumid']);
+		print_form_header('phpkd_euni_phd', 'updateu');
+		print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['phpkd_euni_phd_university'], $university['title'], $university['uid']));
+		construct_hidden_code('uid', $vbulletin->GPC['uid']);
 	}
 
-	$forum['title'] = str_replace('&amp;', '&', $forum['title']);
-	$forum['description'] = str_replace('&amp;', '&', $forum['description']);
+	$university['title'] = str_replace('&amp;', '&', $university['title']);
+	$university['description'] = str_replace('&amp;', '&', $university['description']);
 
-	print_input_row($vbphrase['title'], 'forum[title]', $forum['title']);
-	print_textarea_row($vbphrase['description'], 'forum[description]', $forum['description']);
-	print_input_row($vbphrase['forum_link'], 'forum[link]', $forum['link']);
-	print_input_row("$vbphrase[display_order]<dfn>$vbphrase[zero_equals_no_display]</dfn>", 'forum[displayorder]', $forum['displayorder']);
-	//print_input_row($vbphrase['default_view_age'], 'forum[daysprune]', $forum['daysprune']);
+	print_input_row($vbphrase['phpkd_euni_phd_title'], 'university[title]', $university['title']);
+	print_textarea_row($vbphrase['phpkd_euni_phd_description'], 'university[description]', $university['description']);
+	print_input_row($vbphrase['phpkd_euni_phd_university_link'], 'university[link]', $university['link']);
+	print_input_row($vbphrase['phpkd_euni_phd_university_logo'], 'university[logo]', $university['logo']);
+	print_input_row("$vbphrase[phpkd_euni_phd_display_order]<dfn>$vbphrase[phpkd_euni_phd_zero_equals_no_display]</dfn>", 'university[displayorder]', $university['displayorder']);
+	print_select_row($vbphrase['phpkd_euni_phd_show_private_university'], 'university[showprivate]', array($vbphrase['phpkd_euni_phd_use_default'], $vbphrase['no'], $vbphrase['phpkd_euni_phd_yes_hide_counters'], $vbphrase['phpkd_euni_phd_yes_display_counters']), $university['showprivate']);
 
-	if ($vbulletin->GPC['forumid'] != -1)
+
+	print_table_header($vbphrase['phpkd_euni_phd_style_options']);
+
+	if ($university['styleid'] == 0)
 	{
-		print_forum_chooser($vbphrase['parent_forum'], 'forum[parentid]', $forum['parentid'], $vbphrase['no_one']);
+		$university['styleid'] = -1; // to get the "use default style" option selected
 	}
-	else
+	print_style_chooser_row('university[styleid]', $university['styleid'], $vbphrase['phpkd_euni_phd_use_default_style'], $vbphrase['phpkd_euni_phd_custom_university_style'], 1);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_override_style_choice'], 'university[options][styleoverride]', $university['styleoverride']);
+
+	print_table_header($vbphrase['phpkd_euni_phd_access_options']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_university_is_active'], 'university[options][active]', $university['active']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_can_have_content'], 'university[options][canhavecontent]', $university['canhavecontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_count_content_in_university'], 'university[options][countcontent]', $university['countcontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_show_university_on_university_jump'], 'university[options][showonuniversityjump]', $university['showonuniversityjump']);
+	print_input_row($vbphrase['phpkd_euni_phd_university_password'], 'university[password]', $university['password']);
+	if ($_REQUEST['do'] == 'editu')
 	{
-		construct_hidden_code('parentid', 0);
+		print_yes_no_row($vbphrase['phpkd_euni_phd_apply_password_to_children'], 'applypwdtochild', 0);
 	}
+	print_yes_no_row($vbphrase['phpkd_euni_phd_can_have_password'], 'university[options][canhavepassword]', $university['canhavepassword']);
 
-	// make array for daysprune menu
-	$pruneoptions = array(
-		'1' => $vbphrase['show_threads_from_last_day'],
-		'2' => construct_phrase($vbphrase['show_threads_from_last_x_days'], 2),
-		'7' => $vbphrase['show_threads_from_last_week'],
-		'10' => construct_phrase($vbphrase['show_threads_from_last_x_days'], 10),
-		'14' => construct_phrase($vbphrase['show_threads_from_last_x_weeks'], 2),
-		'30' => $vbphrase['show_threads_from_last_month'],
-		'45' => construct_phrase($vbphrase['show_threads_from_last_x_days'], 45),
-		'60' => construct_phrase($vbphrase['show_threads_from_last_x_months'], 2),
-		'75' => construct_phrase($vbphrase['show_threads_from_last_x_days'], 75),
-		'100' => construct_phrase($vbphrase['show_threads_from_last_x_days'], 100),
-		'365' => $vbphrase['show_threads_from_last_year'],
-		'-1' => $vbphrase['show_all_threads']
-	);
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_editu_form')) ? eval($hook) : false;
 
-	print_select_row($vbphrase['default_view_age'], 'forum[daysprune]', $pruneoptions, $forum['daysprune']);
-
-	$sort_fields = array(
-		'title'        => $vbphrase['thread_title'],
-		'lastpost'     => $vbphrase['last_post_time'],
-		'dateline'     => $vbphrase['thread_start_time'],
-		'replycount'   => $vbphrase['number_of_replies'],
-		'views'        => $vbphrase['number_of_views'],
-		'postusername' => $vbphrase['thread_starter'],
-		'voteavg'      => $vbphrase['thread_rating']
-	);
-	print_select_row($vbphrase['default_sort_field'], 'forum[defaultsortfield]', $sort_fields, $forum['defaultsortfield']);
-	print_select_row($vbphrase['default_sort_order'], 'forum[defaultsortorder]', array('asc' => $vbphrase['ascending'], 'desc' => $vbphrase['descending']), $forum['defaultsortorder']);
-
-	print_select_row($vbphrase['show_private_forum'], 'forum[showprivate]', array($vbphrase['use_default'], $vbphrase['no'], $vbphrase['yes_hide_post_counts'], $vbphrase['yes_display_post_counts']), $forum['showprivate']);
-
-
-	print_table_header($vbphrase['moderation_options']);
-
-	print_input_row($vbphrase['emails_to_notify_when_post'], 'forum[newpostemail]', $forum['newpostemail']);
-	print_input_row($vbphrase['emails_to_notify_when_thread'], 'forum[newthreademail]', $forum['newthreademail']);
-
-	print_yes_no_row($vbphrase['moderate_posts'] . ' <dfn>(' . $vbphrase['require_moderator_validation_before_new_posts_are_displayed'] . ')</dfn>', 'forum[options][moderatenewpost]', $forum['moderatenewpost']);
-	print_yes_no_row($vbphrase['moderate_threads'] . ' <dfn>(' . $vbphrase['require_moderator_validation_before_new_threads_are_displayed'] . ')</dfn>', 'forum[options][moderatenewthread]', $forum['moderatenewthread']);
-	print_yes_no_row($vbphrase['moderate_attachments'] . ' <dfn>(' . $vbphrase['require_moderator_validation_before_new_attachments_are_displayed'] . ')</dfn>', 'forum[options][moderateattach]', $forum['moderateattach']);
-
-	print_table_header($vbphrase['style_options']);
-
-	if ($forum['styleid'] == 0)
-	{
-		$forum['styleid'] = -1; // to get the "use default style" option selected
-	}
-	print_style_chooser_row('forum[styleid]', $forum['styleid'], $vbphrase['use_default_style'], $vbphrase['custom_forum_style'], 1);
-	print_yes_no_row($vbphrase['override_style_choice'], 'forum[options][styleoverride]', $forum['styleoverride']);
-	print_input_row($vbphrase['prefix_for_forum_status_images'], 'forum[imageprefix]', $forum['imageprefix']);
-
-	print_table_header($vbphrase['access_options']);
-
-	print_input_row($vbphrase['forum_password'], 'forum[password]', $forum['password']);
-	if ($_REQUEST['do'] == 'edit')
-	{
-		print_yes_no_row($vbphrase['apply_password_to_children'], 'applypwdtochild', 0);
-	}
-	print_yes_no_row($vbphrase['can_have_password'], 'forum[options][canhavepassword]', $forum['canhavepassword']);
-
-	print_table_header($vbphrase['posting_options']);
-
-	print_yes_no_row($vbphrase['act_as_forum'], 'forum[options][cancontainthreads]', $forum['cancontainthreads']);
-	print_yes_no_row($vbphrase['forum_is_active'], 'forum[options][active]', $forum['active']);
-	print_yes_no_row($vbphrase['forum_open'], 'forum[options][allowposting]', $forum['allowposting']);
-	print_yes_no_row($vbphrase['index_new_posts'], 'forum[options][indexposts]' , $forum['indexposts'] );
-
-	print_table_header($vbphrase['enable_disable_features']);
-
-	print_yes_no_row($vbphrase['allow_html'], 'forum[options][allowhtml]', $forum['allowhtml']);
-	print_yes_no_row($vbphrase['allow_bbcode'], 'forum[options][allowbbcode]', $forum['allowbbcode']);
-	print_yes_no_row($vbphrase['allow_img_code'], 'forum[options][allowimages]', $forum['allowimages']);
-	print_yes_no_row($vbphrase['allow_smilies'], 'forum[options][allowsmilies]', $forum['allowsmilies']);
-	print_yes_no_row($vbphrase['allow_icons'], 'forum[options][allowicons]', $forum['allowicons']);
-	print_yes_no_row($vbphrase['allow_thread_ratings_in_this_forum'], 'forum[options][allowratings]', $forum['allowratings']);
-	print_yes_no_row($vbphrase['count_posts_in_forum'], 'forum[options][countposts]', $forum['countposts']);
-	print_yes_no_row($vbphrase['show_forum_on_forum_jump'], 'forum[options][showonforumjump]', $forum['showonforumjump']);
-
-	$prefixsets = construct_prefixset_checkboxes('prefixset', $forum['forumid']);
-	if ($prefixsets)
-	{
-		print_label_row($vbphrase['use_selected_prefix_sets'], $prefixsets, '', 'top', 'prefixset');
-	}
-	print_yes_no_row($vbphrase['require_threads_have_prefix'], 'forum[options][prefixrequired]', $forum['prefixrequired']);
-
-	($hook = vBulletinHook::fetch_hook('forumadmin_edit_form')) ? eval($hook) : false;
-
-	print_submit_row($vbphrase['save']);
+	print_submit_row($vbphrase['phpkd_euni_phd_save']);
 }
 
 // ###################### Start update #######################
-if ($_POST['do'] == 'update')
+if ($_POST['do'] == 'updateu')
 {
 	$vbulletin->input->clean_array_gpc('p', array(
-		'forumid'			=> TYPE_UINT,
-		'applypwdtochild'	=> TYPE_BOOL,
-		'forum'				=> TYPE_ARRAY,
-		'prefixset'         => TYPE_ARRAY_NOHTML
+		'uid'               => TYPE_UINT,
+		'applypwdtochild'   => TYPE_BOOL,
+		'university'        => TYPE_ARRAY,
 	));
 
-	$forumdata =& datamanager_init('Forum', $vbulletin, ERRTYPE_CP);
+	$universitydata =& datamanager_init('PHPKD_EUNI_PhD_University', $vbulletin, ERRTYPE_CP);
 
-	$forum_exists = false;
-	if ($vbulletin->GPC['forumid'])
+	if ($vbulletin->GPC['uid'])
 	{
-		$forumdata->set_existing($vbulletin->forumcache[$vbulletin->GPC['forumid']]);
-		$forumdata->set_info('applypwdtochild', $vbulletin->GPC['applypwdtochild']);
-
-		$forum_exists = true;
+		$universitydata->set_existing($vbulletin->universitycache[$vbulletin->GPC['uid']]);
+		$universitydata->set_info('applypwdtochild', $vbulletin->GPC['applypwdtochild']);
 	}
 
-	foreach ($vbulletin->GPC['forum'] AS $varname => $value)
+	foreach ($vbulletin->GPC['university'] AS $varname => $value)
 	{
 		if ($varname == 'options')
 		{
 			foreach ($value AS $key => $val)
 			{
-				$forumdata->set_bitfield('options', $key, $val);
+				$universitydata->set_bitfield('options', $key, $val);
 			}
 		}
 		else
 		{
-			$forumdata->set($varname, $value);
+			$universitydata->set($varname, $value);
 		}
 	}
 
-	($hook = vBulletinHook::fetch_hook('forumadmin_update_save')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_updateu_save')) ? eval($hook) : false;
 
-	$forumid = $forumdata->save();
-	if (!$vbulletin->GPC['forumid'])
+	$uid = $universitydata->save();
+	if (!$vbulletin->GPC['uid'])
 	{
-		$vbulletin->GPC['forumid'] = $forumid;
+		$vbulletin->GPC['uid'] = $uid;
 	}
 
-	// find old sets
-	$old_prefixsets = array();
-	if ($forum_exists)
-	{
-		$set_list_sql = $db->query_read("
-			SELECT prefixsetid
-			FROM " . TABLE_PREFIX . "forumprefixset
-			WHERE forumid = " . $vbulletin->GPC['forumid']
-		);
-		while ($set = $db->fetch_array($set_list_sql))
-		{
-			$old_prefixsets[] = $set['prefixsetid'];
-		}
-	}
-
-	// setup prefixes
-	$db->query_write("
-		DELETE FROM " . TABLE_PREFIX . "forumprefixset
-		WHERE forumid = " . $vbulletin->GPC['forumid']
-	);
-
-	$add_prefixsets = array();
-	foreach ($vbulletin->GPC['prefixset'] AS $prefixsetid)
-	{
-		$add_prefixsets[] = '(' . $vbulletin->GPC['forumid'] . ", '" . $db->escape_string($prefixsetid) . "')";
-	}
-
-	if ($add_prefixsets)
-	{
-		$db->query_write("
-			INSERT IGNORE INTO " . TABLE_PREFIX . "forumprefixset
-				(forumid, prefixsetid)
-			VALUES
-				" . implode(',', $add_prefixsets)
-		);
-	}
-
-	$removed_sets = array_diff($old_prefixsets, $vbulletin->GPC['prefixset']);
-	if ($removed_sets)
-	{
-		$removed_sets = array_map(array(&$db, 'escape_string'), $removed_sets);
-
-		$prefixes = array();
-		$prefix_sql = $db->query_read("
-			SELECT prefixid
-			FROM " . TABLE_PREFIX . "prefix
-			WHERE prefixsetid IN ('" . implode("', '", $removed_sets) . "')
-		");
-		while ($prefix = $db->fetch_array($prefix_sql))
-		{
-			$prefixes[] = $prefix['prefixid'];
-		}
-
-		remove_prefixes_forum($prefixes, $vbulletin->GPC['forumid']);
-	}
-
-	require_once(DIR . '/includes/adminfunctions_prefix.php');
-	build_prefix_datastore();
-
-	define('CP_REDIRECT', "forum.php?do=modify&amp;f=" . $vbulletin->GPC['forumid'] . "#forum" . $vbulletin->GPC['forumid']);
-	print_stop_message('saved_forum_x_successfully', $vbulletin->GPC['forum']['title']);
+	define('CP_REDIRECT', "phpkd_euni_phd.php?do=manage&amp;u=" . $vbulletin->GPC['uid'] . "#university" . $vbulletin->GPC['uid']);
+	print_stop_message('phpkd_euni_phd_saved_university_x_successfully', $vbulletin->GPC['university']['title']);
 }
 // ###################### Start Remove #######################
 
@@ -397,18 +244,18 @@ if ($_POST['do'] == 'doorder')
 	if (is_array($vbulletin->GPC['order']))
 	{
 		$forums = $db->query_read("SELECT * FROM " . TABLE_PREFIX . "forum");
-		while ($forum = $db->fetch_array($forums))
+		while ($university = $db->fetch_array($forums))
 		{
-			if (!isset($vbulletin->GPC['order']["$forum[forumid]"]))
+			if (!isset($vbulletin->GPC['order']["$university[forumid]"]))
 			{
 				continue;
 			}
 
-			$displayorder = intval($vbulletin->GPC['order']["$forum[forumid]"]);
-			if ($forum['displayorder'] != $displayorder)
+			$displayorder = intval($vbulletin->GPC['order']["$university[forumid]"]);
+			if ($university['displayorder'] != $displayorder)
 			{
 				$forumdm =& datamanager_init('Forum', $vbulletin, ERRTYPE_SILENT);
-				$forumdm->set_existing($forum);
+				$forumdm->set_existing($university);
 				$forumdm->setr('displayorder', $displayorder);
 				$forumdm->save();
 				unset($forumdm);
@@ -418,7 +265,7 @@ if ($_POST['do'] == 'doorder')
 
 	build_forum_permissions();
 
-	define('CP_REDIRECT', 'forum.php?do=modify');
+	define('CP_REDIRECT', 'forum.php?do=manage');
 	print_stop_message('saved_display_order_successfully');
 }
 
@@ -447,8 +294,8 @@ function forum_is_related_to_forum($partial_list, $forumid, $full_list)
 	return true;
 }
 
-// ###################### Start modify #######################
-if ($_REQUEST['do'] == 'modify')
+// ###################### Start manage #######################
+if ($_REQUEST['do'] == 'manage')
 {
 	$vbulletin->input->clean_array_gpc('r', array(
 		'forumid' 	=> TYPE_UINT,
@@ -499,11 +346,11 @@ if ($_REQUEST['do'] == 'modify')
 				case 'perms':
 					if (cp_collapse_forums > 0)
 					{
-						page = "forumpermission.php?do=modify&f=";
+						page = "forumpermission.php?do=manage&f=";
 					}
 					else
 					{
-						page = "forumpermission.php?do=modify&devnull=";
+						page = "forumpermission.php?do=manage&devnull=";
 					}
 					break;
 				case 'podcast': page = "forum.php?do=podcast&f="; break;
@@ -587,8 +434,8 @@ if ($_REQUEST['do'] == 'modify')
 
 	if ($vbulletin->options['cp_collapse_forums'] != 2)
 	{
-		print_form_header('forum', 'doorder');
-		print_table_header($vbphrase['forum_manager'], 4);
+		print_form_header('phpkd_euni_phd', 'doorder');
+		print_table_header($vbphrase['phpkd_euni_phd_manager'], 4);
 		print_description_row($vbphrase['if_you_change_display_order'], 0, 4);
 
 		require_once(DIR . '/includes/functions_forumlist.php');
@@ -596,14 +443,14 @@ if ($_REQUEST['do'] == 'modify')
 
 		$forums = array();
 		$expanddata = array('forumid' => -1, 'parentlist' => '');
-		if (is_array($vbulletin->forumcache))
+		if (is_array($vbulletin->universitycache))
 		{
-			foreach($vbulletin->forumcache AS $forumid => $forum)
+			foreach($vbulletin->universitycache AS $forumid => $university)
 			{
-				$forums["$forum[forumid]"] = construct_depth_mark($forum['depth'], '--') . ' ' . $forum['title'];
-				if ($forum['forumid'] == $vbulletin->GPC['expandid'])
+				$forums["$university[forumid]"] = construct_depth_mark($university['depth'], '--') . ' ' . $university['title'];
+				if ($university['forumid'] == $vbulletin->GPC['expandid'])
 				{
-					$expanddata = $forum;
+					$expanddata = $university;
 				}
 			}
 		}
@@ -618,11 +465,11 @@ if ($_REQUEST['do'] == 'modify')
 			$expandtext = '';
 		}
 
-		if (is_array($vbulletin->forumcache))
+		if (is_array($vbulletin->universitycache))
 		{
-			foreach($vbulletin->forumcache AS $key => $forum)
+			foreach($vbulletin->universitycache AS $key => $university)
 			{
-				$modcount = sizeof($imodcache["$forum[forumid]"]);
+				$modcount = sizeof($imodcache["$university[forumid]"]);
 				if ($modcount)
 				{
 					$mainoptions =& $forumoptions1;
@@ -634,34 +481,34 @@ if ($_REQUEST['do'] == 'modify')
 				}
 
 				$cell = array();
-				if (!$vbulletin->options['cp_collapse_forums'] OR $forum['forumid'] == $expanddata['forumid'] OR in_array($forum['forumid'], $expanddata['parentids']))
+				if (!$vbulletin->options['cp_collapse_forums'] OR $university['forumid'] == $expanddata['forumid'] OR in_array($university['forumid'], $expanddata['parentids']))
 				{
-					$cell[] = "<a name=\"forum$forum[forumid]\">&nbsp;</a> $expandtext<b>" . construct_depth_mark($forum['depth'],'- - ') . "<a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&amp;f=$forum[forumid]\">$forum[title]</a>" . iif(!empty($forum['password']),'*') . " " . iif($forum['link'], "(<a href=\"" . htmlspecialchars_uni($forum['link']) . "\">" . $vbphrase['link'] . "</a>)") . "</b>";
-					$cell[] = "\n\t<select name=\"f$forum[forumid]\" onchange=\"js_forum_jump($forum[forumid]);\" class=\"bginput\">\n" . construct_select_options($mainoptions) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_forum_jump($forum[forumid]);\" />\n\t";
-					$cell[] = "<input type=\"text\" class=\"bginput\" name=\"order[$forum[forumid]]\" value=\"$forum[displayorder]\" tabindex=\"1\" size=\"3\" title=\"" . $vbphrase['edit_display_order'] . "\" />";
+					$cell[] = "<a name=\"forum$university[forumid]\">&nbsp;</a> $expandtext<b>" . construct_depth_mark($university['depth'],'- - ') . "<a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&amp;f=$university[forumid]\">$university[title]</a>" . iif(!empty($university['password']),'*') . " " . iif($university['link'], "(<a href=\"" . htmlspecialchars_uni($university['link']) . "\">" . $vbphrase['link'] . "</a>)") . "</b>";
+					$cell[] = "\n\t<select name=\"f$university[forumid]\" onchange=\"js_forum_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mainoptions) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_forum_jump($university[forumid]);\" />\n\t";
+					$cell[] = "<input type=\"text\" class=\"bginput\" name=\"order[$university[forumid]]\" value=\"$university[displayorder]\" tabindex=\"1\" size=\"3\" title=\"" . $vbphrase['edit_display_order'] . "\" />";
 
-					$mods = array('no_value' => $vbphrase['moderators'].' (' . sizeof($imodcache["$forum[forumid]"]) . ')');
-					if (is_array($imodcache["$forum[forumid]"]))
+					$mods = array('no_value' => $vbphrase['moderators'].' (' . sizeof($imodcache["$university[forumid]"]) . ')');
+					if (is_array($imodcache["$university[forumid]"]))
 					{
-						foreach ($imodcache["$forum[forumid]"] AS $moderator)
+						foreach ($imodcache["$university[forumid]"] AS $moderator)
 						{
 							$mods['']["$moderator[moderatorid]"] = $moderator['username'];
 						}
 					}
 					$mods['add'] = $vbphrase['add_moderator'];
-					$cell[] = "\n\t<select name=\"m$forum[forumid]\" onchange=\"js_moderator_jump($forum[forumid]);\" class=\"bginput\">\n" . construct_select_options($mods) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_moderator_jump($forum[forumid]);\" />\n\t";
+					$cell[] = "\n\t<select name=\"m$university[forumid]\" onchange=\"js_moderator_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mods) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_moderator_jump($university[forumid]);\" />\n\t";
 				}
 				else if (
 					$vbulletin->options['cp_collapse_forums'] AND
 						(
-						$forum['parentid'] == $expanddata['forumid'] OR
-						$forum['parentid'] == -1 OR
-						forum_is_related_to_forum($forum['parentlist'], $forum['forumid'], $expanddata['parentlist'])
+						$university['parentid'] == $expanddata['forumid'] OR
+						$university['parentid'] == -1 OR
+						forum_is_related_to_forum($university['parentlist'], $university['forumid'], $expanddata['parentlist'])
 						)
 					)
 				{
-					$cell[] = "<a name=\"forum$forum[forumid]\">&nbsp;</a> <a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=modify&amp;expandid=$forum[forumid]\">[+]</a>  <b>" . construct_depth_mark($forum['depth'],'- - ') . "<a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&amp;f=$forum[forumid]\">$forum[title]</a>" . iif(!empty($forum['password']),'*') . " " . iif($forum['link'], "(<a href=\"$forum[link]\">" . $vbphrase['link'] . "</a>)") . "</b>";
-					$cell[] = construct_link_code($vbphrase['expand'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=modify&amp;expandid=$forum[forumid]");
+					$cell[] = "<a name=\"forum$university[forumid]\">&nbsp;</a> <a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=manage&amp;expandid=$university[forumid]\">[+]</a>  <b>" . construct_depth_mark($university['depth'],'- - ') . "<a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&amp;f=$university[forumid]\">$university[title]</a>" . iif(!empty($university['password']),'*') . " " . iif($university['link'], "(<a href=\"$university[link]\">" . $vbphrase['link'] . "</a>)") . "</b>";
+					$cell[] = construct_link_code($vbphrase['expand'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=manage&amp;expandid=$university[forumid]");
 					$cell[] = "&nbsp;";
 					$cell[] = "&nbsp;";
 				}
@@ -670,62 +517,62 @@ if ($_REQUEST['do'] == 'modify')
 					continue;
 				}
 
-				if ($forum['parentid'] == -1)
+				if ($university['parentid'] == -1)
 				{
-					print_cells_row(array($vbphrase['forum'], $vbphrase['controls'], $vbphrase['display_order'], $vbphrase['moderators']), 1, 'tcat');
+					print_cells_row(array($vbphrase['forum'], $vbphrase['controls'], $vbphrase['phpkd_euni_phd_display_order'], $vbphrase['moderators']), 1, 'tcat');
 				}
 				print_cells_row($cell);
 			}
 		}
 
-		print_table_footer(4, "<input type=\"submit\" class=\"button\" tabindex=\"1\" value=\"" . $vbphrase['save_display_order'] . "\" accesskey=\"s\" />" . construct_button_code($vbphrase['add_new_forum'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=add"));
+		print_table_footer(4, "<input type=\"submit\" class=\"button\" tabindex=\"1\" value=\"" . $vbphrase['save_display_order'] . "\" accesskey=\"s\" />" . construct_button_code($vbphrase['phpkd_euni_phd_add_new_university'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=add"));
 
 		if ($vbulletin->options['cp_collapse_forums'])
 		{
-			echo '<p class="smallfont" align="center">' . construct_link_code($vbphrase['expand_all'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=modify&amp;expandid=-2") . '</p>';
+			echo '<p class="smallfont" align="center">' . construct_link_code($vbphrase['expand_all'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=manage&amp;expandid=-2") . '</p>';
 		}
 
 		echo '<p class="smallfont" align="center">' . $vbphrase['forums_marked_asterisk_are_password_protected'] . '</p>';
 	}
 	else
 	{
-		print_form_header('forum', 'doorder');
-		print_table_header($vbphrase['forum_manager'], 2);
+		print_form_header('phpkd_euni_phd', 'doorder');
+		print_table_header($vbphrase['phpkd_euni_phd_manager'], 2);
 
 		print_cells_row(array($vbphrase['forum'], $vbphrase['controls']), 1, 'tcat');
 		$cell = array();
 
 		$select = '<select name="forumid" id="sel_foruid" tabindex="1" class="bginput">';
-		$select .= construct_forum_chooser($vbulletin->GPC['forumid'], true);
+		$select .= construct_university_chooser($vbulletin->GPC['forumid'], true);
 		$select .= "</select>\n";
 
 		$cell[] = $select;
 		$cell[] = "\n\t<select name=\"controls\" class=\"bginput\">\n" . construct_select_options($forumoptions1) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_forum_jump(js_returnid());\" />\n\t";
 		print_cells_row($cell);
-		print_table_footer(2, construct_button_code($vbphrase['add_new_forum'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=add"));
+		print_table_footer(2, construct_button_code($vbphrase['phpkd_euni_phd_add_new_university'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=add"));
 	}
 }
 
 // ###################### Start add podcast #######################
 if ($_REQUEST['do'] == 'podcast')
 {
-	if (!($forum = fetch_foruminfo($vbulletin->GPC['forumid'], false)))
+	if (!($university = fetch_universityinfo($vbulletin->GPC['forumid'], false)))
 	{
-		print_stop_message('invalid_forum_specified');
+		print_stop_message('phpkd_euni_phd_invalid_university_specified');
 	}
 	require_once(DIR . '/includes/adminfunctions_misc.php');
 
-	$forum['title'] = str_replace('&amp;', '&', $forum['title']);
+	$university['title'] = str_replace('&amp;', '&', $university['title']);
 
 	$podcast = $db->query_first("
 		SELECT *
 		FROM " . TABLE_PREFIX . "podcast
-		WHERE forumid = $forum[forumid]"
+		WHERE forumid = $university[forumid]"
 	);
 
-	print_form_header('forum', 'updatepodcast');
-	print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['podcast_settings'], $forum['title'], $forum['forumid']));
-	construct_hidden_code('forumid', $forum['forumid']);
+	print_form_header('phpkd_euni_phd', 'updatepodcast');
+	print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['podcast_settings'], $university['title'], $university['forumid']));
+	construct_hidden_code('forumid', $university['forumid']);
 
 	print_yes_no_row($vbphrase['enabled'], 'enabled', $podcast['enabled']);
 	print_podcast_chooser($vbphrase['category'], 'categoryid', $podcast['categoryid']);
@@ -757,9 +604,9 @@ if ($_POST['do'] == 'updatepodcast')
 		'summary'    => TYPE_STR,
 	));
 
-	if (!($forum = fetch_foruminfo($vbulletin->GPC['forumid'], false)))
+	if (!($university = fetch_universityinfo($vbulletin->GPC['forumid'], false)))
 	{
-		print_stop_message('invalid_forum_specified');
+		print_stop_message('phpkd_euni_phd_invalid_university_specified');
 	}
 	require_once(DIR . '/includes/adminfunctions_misc.php');
 
@@ -768,7 +615,7 @@ if ($_POST['do'] == 'updatepodcast')
 	$db->query_write("
 		REPLACE INTO " . TABLE_PREFIX . "podcast (forumid, enabled, categoryid, category, author, image, explicit, keywords, owneremail, ownername, subtitle, summary)
 		VALUES (
-			$forum[forumid],
+			$university[forumid],
 			" . intval($vbulletin->GPC['enabled']) . ",
 			" . $vbulletin->GPC['categoryid'] . ",
 			'" . $db->escape_string(serialize($category)) . "',
@@ -785,7 +632,7 @@ if ($_POST['do'] == 'updatepodcast')
 
 	build_forum_permissions();
 
-	define('CP_REDIRECT', 'forum.php?do=modify');
+	define('CP_REDIRECT', 'forum.php?do=manage');
 	print_stop_message('updated_podcast_settings_successfully');
 }
 
@@ -794,8 +641,8 @@ print_cp_footer();
 /*=================================================================================*\
 || ############################################################################### ||
 || # Version.: 1.0.0
-|| # Revision: $Revision: 8 $
-|| # Released: $Date: 2008-05-16 10:29:42 +0300 (Fri, 16 May 2008) $
+|| # Revision: $Revision$
+|| # Released: $Date$
 || ############################################################################### ||
 \*=================================================================================*/
 ?>

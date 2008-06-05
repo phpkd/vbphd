@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<bitfields product="phpkd_euni_phd">
+	<bitfielddefs>
+		<group name="ugp">
+			<group name="phpkdeuniphdadminperms">
+				<bitfield name="canadminuniversities" phrase="phpkd_euni_phd_can_administer_universities">1</bitfield>
+				<bitfield name="canadmincolleges"     phrase="phpkd_euni_phd_can_administer_colleges"    >2</bitfield>
+				<bitfield name="canadmindepartments"  phrase="phpkd_euni_phd_can_administer_departments" >4</bitfield>
+				<bitfield name="canadminprofessors"   phrase="phpkd_euni_phd_can_administer_professors"  >8</bitfield>
+				<bitfield name="canadminitems"        phrase="phpkd_euni_phd_can_administer_items"       >16</bitfield>
+				<bitfield name="canadminstudents"     phrase="phpkd_euni_phd_can_administer_students"    >32</bitfield>
+			</group>
+			<group name="phpkdeuniphdmodperms">
+				<bitfield name="canmoderateuniversities">1</bitfield>
+				<bitfield name="canmoderatecolleges"    >2</bitfield>
+				<bitfield name="canmoderatedepartments" >4</bitfield>
+				<bitfield name="canmoderateprofessors"  >8</bitfield>
+				<bitfield name="canmoderateitems"       >16</bitfield>
+				<bitfield name="canmoderatestudents"    >32</bitfield>
+			</group>
+			<group name="phpkdeuniphduserperms">
+				<bitfield name="canviewuniversities"   phrase="phpkd_euni_phd_can_view_universities"   >1</bitfield>
+				<bitfield name="canviewcolleges"       phrase="phpkd_euni_phd_can_view_colleges"       >2</bitfield>
+				<bitfield name="canviewdepartments"    phrase="phpkd_euni_phd_can_view_departments"    >4</bitfield>
+				<bitfield name="canviewprofessors"     phrase="phpkd_euni_phd_can_view_professors"     >8</bitfield>
+				<bitfield name="canrateprofessors"     phrase="phpkd_euni_phd_can_rate_professors"     >16</bitfield>
+				<bitfield name="canviewitems"          phrase="phpkd_euni_phd_can_view_items"          >32</bitfield>
+				<bitfield name="canstudyitems"         phrase="phpkd_euni_phd_can_study_items"         >64</bitfield>
+				<bitfield name="canviewstudents"       phrase="phpkd_euni_phd_can_view_students"       >128</bitfield>
+				<bitfield name="canviewowngrades"      phrase="phpkd_euni_phd_can_view_own_grades"     >256</bitfield>
+				<bitfield name="canviewstudentsgrades" phrase="phpkd_euni_phd_can_view_students_grades">512</bitfield>
+			</group>
+		</group>
+		<group name="misc">
+			<group name="phpkdeuniphduniversity">
+				<bitfield name="active"              >1</bitfield>
+				<bitfield name="canhavecontent"      >2</bitfield>
+				<bitfield name="countcontent"        >4</bitfield>
+				<bitfield name="canhavepassword"     >8</bitfield>
+				<bitfield name="styleoverride"       >16</bitfield>
+				<bitfield name="showonuniversityjump">32</bitfield>
+			</group>
+			<group name="phpkdeuniphdcollege">
+				<bitfield name="active"              >1</bitfield>
+				<bitfield name="canhavecontent"      >2</bitfield>
+				<bitfield name="countcontent"        >4</bitfield>
+				<bitfield name="canhavepassword"     >8</bitfield>
+				<bitfield name="styleoverride"       >16</bitfield>
+				<bitfield name="showonuniversityjump">32</bitfield>
+			</group>
+			<group name="phpkdeuniphddepartment">
+				<bitfield name="active"              >1</bitfield>
+				<bitfield name="canhavecontent"      >2</bitfield>
+				<bitfield name="countcontent"        >4</bitfield>
+				<bitfield name="canhavepassword"     >8</bitfield>
+				<bitfield name="styleoverride"       >16</bitfield>
+				<bitfield name="showonuniversityjump">32</bitfield>
+			</group>
+		</group>
+	</bitfielddefs>
+</bitfields>
+
+<!-- Version: 1.0.0 | $Revision: 8 $ | $Date: 2008-05-16 10:29:42 +0300 (Fri, 16 May 2008) $ -->

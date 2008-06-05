@@ -16,6 +16,148 @@
 
 error_reporting(E_ALL & ~E_NOTICE);
 
+// #############################################################################
+/**
+* Returns a list of <option> tags representing the list of universities
+*
+* @param	integer	Selected University ID
+* @param	boolean	Whether or not to display the 'Select University' option
+* @param	string	If specified, name for the optional top element - no name, no display
+*
+* @return	string	List of <option> tags
+*/
+function construct_university_chooser($selectedid = -1, $displayselectuniversity = false, $topname = null)
+{
+	return construct_select_options(construct_university_chooser_options($displayselectuniversity, $topname), $selectedid);
+}
+
+// #############################################################################
+/**
+* Returns a list of <option> tags representing the list of universities
+*
+* @param	boolean	Whether or not to display the 'Select University' option
+* @param	string	If specified, name for the optional top element - no name, no display
+*
+* @return	string	List of <option> tags
+*/
+function construct_university_chooser_options($displayselectuniversity = false, $topname = null)
+{
+	global $vbulletin, $vbphrase;
+
+	$selectoptions = array();
+
+	if ($displayselectuniversity)
+	{
+		$selectoptions[0] = $vbphrase['phpkd_euni_phd_select_university'];
+	}
+
+	if ($topname)
+	{
+		$selectoptions['-1'] = $topname;
+		$startdepth = '--';
+	}
+	else
+	{
+		$startdepth = '';
+	}
+
+	foreach ($vbulletin->universitycache AS $uid => $university)
+	{
+		$selectoptions["$uid"] = construct_depth_mark($university['depth'], '--', $startdepth) . ' ' . $university['title'];
+	}
+
+	return $selectoptions;
+}
+
+// #############################################################################
+/**
+* Returns an array containing info for the specified university, or false if university is not found
+*
+* @param	integer	(ref) University ID
+* @param	boolean	Whether or not to return the result from the universitycache if it exists
+*
+* @return	mixed
+*/
+function fetch_universityinfo(&$uid, $usecache = true)
+{
+	global $vbulletin;
+
+	$uid = intval($uid);
+	if (!$usecache OR !isset($vbulletin->universitycache["$uid"]))
+	{
+		if (isset($vbulletin->universitycache["$uid"]['permissions']))
+		{
+			$perms = $vbulletin->universitycache["$uid"]['permissions'];
+		}
+
+		$vbulletin->universitycache["$uid"] = $vbulletin->db->query_first_slave("
+			SELECT university.*
+			FROM " . TABLE_PREFIX . "phpkd_euni_phd_university AS university
+			WHERE university.uid = $uid
+		");
+	}
+
+	if (!$vbulletin->universitycache["$uid"])
+	{
+		return false;
+	}
+
+	if (isset($perms))
+	{
+		$vbulletin->universitycache["$uid"]['permissions'] = $perms;
+	}
+
+	// decipher 'options' bitfield
+	$vbulletin->universitycache["$uid"]['options'] = intval($vbulletin->universitycache["$uid"]['options']);
+	foreach($vbulletin->bf_misc_universityoptions AS $optionname => $optionval)
+	{
+		$vbulletin->universitycache["$uid"]["$optionname"] = (($vbulletin->universitycache["$uid"]['options'] & $optionval) ? 1 : 0);
+	}
+
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_fetch_universityinfo')) ? eval($hook) : false;
+
+	return $vbulletin->universitycache["$uid"];
+}
+
+// #############################################################################
+/**
+* Prints a row containing a <select> list of universities, complete with displayorder, parenting and depth information
+*
+* @param	string	text for the left cell of the table row
+* @param	string	name of the <select>
+* @param	mixed	selected <option>
+* @param	string	name given to the -1 <option>
+* @param	boolean	display the -1 <option> or not.
+* @param	boolean	when true, allows multiple selections to be made. results will be stored in $name's array
+*/
+function print_university_chooser($title, $name, $selectedid = -1, $topname = null, $displayselectuniversity = false, $multiple = false)
+{
+	if ($displayselectforum AND $selectedid <= 0)
+	{
+		$selectedid = 0;
+	}
+
+	print_select_row($title, $name, construct_university_chooser_options($displayselectuniversity, $topname), $selectedid, 0, $multiple ? 10 : 0, $multiple);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For Advanced Permissions editor!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ###################### Start getforumpermissions #######################
 // queries forumpermissions for a single forum and either returns the forumpermissions,
 // or the usergroup default.
@@ -28,14 +170,14 @@ function fetch_forum_permissions($usergroupid, $forumid)
 	DEVDEBUG("FPerms: Usergroup Defaults: $perms");
 
 	// get the parent list of the forum we are interested in, excluding -1
-	$parentlist = substr($vbulletin->forumcache["$forumid"]['parentlist'], 0, -3);
+	$parentlist = substr($vbulletin->universitycache["$forumid"]['parentlist'], 0, -3);
 
 	// query forum permissions for the forums in the parent list of the current one
 	$fperms = $vbulletin->db->query_read("
-		SELECT forumid, forumpermissions
-		FROM " . TABLE_PREFIX . "forumpermission
-		WHERE usergroupid = $usergroupid
-		AND forumid IN($parentlist)
+		SELECT uid, uperms
+		FROM " . TABLE_PREFIX . "phpkd_euni_phd_uperms as uperms
+		WHERE grpid = $usergroupid
+		AND uid IN($parentlist)
 	");
 	// no custom permissions found, return usergroup defaults
 	if ($vbulletin->db->num_rows($fperms) == 0)
@@ -60,108 +202,12 @@ function fetch_forum_permissions($usergroupid, $forumid)
 			if (isset($fp["$parentid"]))
 			{
 				$perms = $fp["$parentid"];
-				DEVDEBUG("FPerms: Custom - forum '" . $vbulletin->forumcache["$parentid"]['title'] . "': $perms");
+				DEVDEBUG("FPerms: Custom - forum '" . $vbulletin->universitycache["$parentid"]['title'] . "': $perms");
 			}
 		}
 
 		// return the permissions, whatever they may be now.
 		return array('forumpermissions' => $perms);
-	}
-}
-
-// ###################### Start makechildlist ########################
-function construct_child_list($forumid)
-{
-	global $vbulletin;
-
-	if ($forumid == -1)
-	{
-		return '-1';
-	}
-
-	$childlist = $forumid;
-
-	$children = $vbulletin->db->query_read("
-		SELECT forumid
-		FROM " . TABLE_PREFIX . "forum
-		WHERE parentlist LIKE '%,$forumid,%'
-	");
-	while ($child = $vbulletin->db->fetch_array($children))
-	{
-		$childlist .= ',' . $child['forumid'];
-	}
-
-	$childlist .= ',-1';
-
-	return $childlist;
-
-}
-
-// ###################### Start updatechildlists #######################
-function build_forum_child_lists($forumid = -1)
-{
-	global $vbulletin;
-
-	$forums = $vbulletin->db->query_read("SELECT * FROM " . TABLE_PREFIX . "forum WHERE FIND_IN_SET('$forumid', childlist)");
-	while ($forum = $vbulletin->db->fetch_array($forums))
-	{
-		$childlist = construct_child_list($forum['forumid']);
-
-		$forumdm =& datamanager_init('Forum', $vbulletin, ERRTYPE_SILENT);
-		$forumdm->set_existing($forum);
-		$forumdm->setr('childlist', $childlist);
-		$forumdm->save();
-		unset($forumdm);
-	}
-}
-
-// ###################### Start makeparentlist #######################
-function fetch_forum_parentlist($forumid)
-{
-	global $vbulletin;
-
-	if ($forumid == -1)
-	{
-		return '-1';
-	}
-
-	$foruminfo = $vbulletin->db->query_first("SELECT parentid FROM " . TABLE_PREFIX . "forum WHERE forumid = $forumid");
-
-	$forumarray = $forumid;
-
-	if ($foruminfo['parentid'] != 0)
-	{
-		$forumarray .= ',' . fetch_forum_parent_list($foruminfo['parentid']);
-	}
-
-	if (substr($forumarray, -2) != -1)
-	{
-		$forumarray .= '-1';
-	}
-
-	return $forumarray;
-}
-
-// ###################### Start updateparentlists #######################
-function build_forum_parentlists($forumid = -1)
-{
-	global $vbulletin;
-
-	$forums = $vbulletin->db->query_read("
-		SELECT *, (CHAR_LENGTH(parentlist) - CHAR_LENGTH(REPLACE(parentlist, ',', ''))) AS parents
-		FROM " . TABLE_PREFIX . "forum
-		WHERE FIND_IN_SET('$forumid', parentlist)
-		ORDER BY parents ASC
-	");
-	while($forum = $vbulletin->db->fetch_array($forums))
-	{
-		$parentlist = fetch_forum_parentlist($forum['forumid']);
-
-		$forumdm =& datamanager_init('Forum', $vbulletin, ERRTYPE_SILENT);
-		$forumdm->set_existing($forum);
-		$forumdm->setr('parentlist', $parentlist);
-		$forumdm->save();
-		unset($forumdm);
 	}
 }
 
@@ -198,11 +244,13 @@ function print_forum_permission_rows($customword, $forumpermission = array(), $e
 	($hook = vBulletinHook::fetch_hook('admin_fperms_form')) ? eval($hook) : false;
 }
 
+*/
+
 /*=================================================================================*\
 || ############################################################################### ||
 || # Version.: 1.0.0
-|| # Revision: $Revision: 8 $
-|| # Released: $Date: 2008-05-16 10:29:42 +0300 (Fri, 16 May 2008) $
+|| # Revision: $Revision$
+|| # Released: $Date$
 || ############################################################################### ||
 \*=================================================================================*/
 ?>
