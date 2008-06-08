@@ -54,7 +54,7 @@ class vB_DataManager_PHPKD_EUNI_PhD extends vB_DataManager
 
 
 	/**
-	* Verifies that the given forum title is valid
+	* Verifies that the given eunixx title is valid
 	*
 	* @param	string	Title
 	*
@@ -133,19 +133,19 @@ class vB_DataManager_PHPKD_EUNI_PhD extends vB_DataManager
 /**
 * Class to do data save/delete operations for Universities
 *
-* @package	vBulletin
+* @package	PHPKD
 * @version	$Revision$
 * @date		$Date$
 */
 class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI_PhD
 {
 /**
-	* Array of recognised and required fields for forums, and their types
+	* Array of recognised and required fields for universities, and their types
 	*
 	* @var	array
 	*/
 	var $validfields = array(
-		'forumid'           => array(TYPE_UINT,       REQ_INCR, VF_METHOD, 'verify_nonzero'),
+		'uid'               => array(TYPE_UINT,       REQ_INCR, VF_METHOD, 'verify_nonzero'),
 		'styleid'           => array(TYPE_INT,        REQ_NO,   'if ($data < 0) { $data = 0; } return true;'),
 		'title'             => array(TYPE_STR,        REQ_YES,  VF_METHOD),
 		'title_clean'       => array(TYPE_STR,        REQ_YES),
@@ -153,27 +153,16 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 		'description_clean' => array(TYPE_STR,        REQ_NO),
 		'options'           => array(TYPE_ARRAY_BOOL, REQ_AUTO),
 		'displayorder'      => array(TYPE_UINT,       REQ_NO),
-		'replycount'        => array(TYPE_UINT,       REQ_NO),
-		'lastpost'          => array(TYPE_UINT,       REQ_NO),
-		'lastposter'        => array(TYPE_STR,        REQ_NO),
-		'lastpostid'        => array(TYPE_UINT,       REQ_NO),
-		'lastthread'        => array(TYPE_STR,        REQ_NO),
-		'lastthreadid'      => array(TYPE_UINT,       REQ_NO),
-		'lasticonid'        => array(TYPE_INT,        REQ_NO),
-		'lastprefixid'      => array(TYPE_NOHTML,     REQ_NO),
-		'threadcount'       => array(TYPE_UINT,       REQ_NO),
-		'daysprune'         => array(TYPE_INT,        REQ_AUTO, 'if ($data == 0) { $data = -1; } return true;'),
-		'newpostemail'      => array(TYPE_STR,        REQ_NO,   VF_METHOD, 'verify_emaillist'),
-		'newthreademail'    => array(TYPE_STR,        REQ_NO,   VF_METHOD, 'verify_emaillist'),
-		'parentid'          => array(TYPE_INT,        REQ_YES,  VF_METHOD),
+		'collegecount'      => array(TYPE_UINT,       REQ_NO),
+		'departmentcount'   => array(TYPE_UINT,       REQ_NO),
+		'professorcount'    => array(TYPE_UINT,       REQ_NO),
+		'itemcount'         => array(TYPE_UINT,       REQ_NO),
+		'studentcount'      => array(TYPE_UINT,       REQ_NO),
 		'password'          => array(TYPE_NOTRIM,     REQ_NO),
 		'link'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
-		'parentlist'        => array(TYPE_STR,        REQ_AUTO, 'return preg_match(\'#^(\d+,)*-1$#\', $data);'),
+		'logo'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
 		'childlist'         => array(TYPE_STR,        REQ_AUTO),
-		'showprivate'       => array(TYPE_UINT,       REQ_NO,   'if ($data > 3) { $data = 0; } return true;'),
-		'defaultsortfield'  => array(TYPE_STR,        REQ_NO),
-		'defaultsortorder'  => array(TYPE_STR,        REQ_NO,   'if ($data != "asc") { $data = "desc"; } return true;'),
-		'imageprefix'       => array(TYPE_NOHTML,     REQ_NO,  VF_METHOD)
+		'showprivate'       => array(TYPE_UINT,       REQ_NO,   'if ($data > 3) { $data = 0; } return true;')
 	);
 
 	/**
@@ -182,28 +171,655 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 	*
 	* @var	array
 	*/
-	var $bitfields = array('options' => 'bf_misc_forumoptions');
+	var $bitfields = array('options' => 'bf_misc_phpkdeuniphduniversity');
 
 	/**
 	* The main table this class deals with
 	*
 	* @var	string
 	*/
-	var $table = 'forum';
+	var $table = 'phpkd_euni_phd_university';
 
 	/**
-	* Array to store stuff to save to forum table
+	* Array to store stuff to save to university table
 	*
 	* @var	array
 	*/
-	var $forum = array();
+	var $phpkd_euni_phd_university = array();
 
 	/**
 	* Condition template for update query
 	*
 	* @var	array
 	*/
-	var $condition_construct = array('forumid = %1$d', 'forumid');
+	var $condition_construct = array('uid = %1$d', 'uid');
+
+	/**
+	* Constructor - checks that the registry object has been passed correctly.
+	*
+	* @param	vB_Registry	Instance of the vBulletin data registry object - expected to have the database object as one of its $this->db member.
+	* @param	integer		One of the ERRTYPE_x constants
+	*/
+	function vB_DataManager_PHPKD_EUNI_PhD_University(&$registry, $errtype = ERRTYPE_STANDARD)
+	{
+		parent::vB_DataManager($registry, $errtype);
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_university_data_start')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed for each record updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_each($doquery = true)
+	{
+		if ($this->condition AND $this->info['applypwdtochild'] AND isset($this->phpkd_euni_phd_university['password']) AND $this->phpkd_euni_phd_university['password'] != $this->existing['password'])
+		{
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_college
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_university['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['uid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_department
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_university['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['uid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_professor
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_university['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['uid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_item
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_university['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['uid'] . "', parentlist)
+    		");
+		}
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_university_data_postsave')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed once after all records are updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_once($doquery = true)
+	{
+		if (empty($this->info['disable_cache_rebuild']))
+		{
+			require_once(DIR . '/includes/adminfunctions_phpkd_euni_phd.php');
+			build_university_permissions();
+		}
+	}
+
+
+	/**
+	* Deletes a university and its associated data from the database
+	*/
+	function delete()
+	{
+		// fetch list of universities and the child colleges and related departments to delete
+		$universitylist = '';
+		$collegelist = '';
+		$departmentlist = '';
+
+		$universities = $this->dbobject->query_read_slave("SELECT uid FROM " . TABLE_PREFIX . "phpkd_euni_phd_university WHERE " . $this->condition);
+		while($thisuniversity = $this->dbobject->fetch_array($universities))
+		{
+			$universitylist .= ',' . $thisuniversity['uid'];
+		}
+		$this->dbobject->free_result($universities);
+
+		$universitylist = substr($universitylist, 1);
+		$collegelist = substr($collegelist, 1);
+		$departmentlist = substr($departmentlist, 1);
+
+		if ($universitylist == '')
+		{
+			// nothing to do
+			$this->error('phpkd_euni_phd_invalid_university_specified');
+		}
+		else
+		{
+			/*
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			 * Deleting related Data
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			$condition = "uid IN ($universitylist)";
+
+			// delete from extra data tables
+			$this->db_delete(TABLE_PREFIX, 'forumpermission', $condition);
+			$this->db_delete(TABLE_PREFIX, 'access',          $condition);
+			$this->db_delete(TABLE_PREFIX, 'moderator',       $condition);
+			$this->db_delete(TABLE_PREFIX, 'announcement',    $condition);
+			$this->db_delete(TABLE_PREFIX, 'subscribeforum',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'tachyforumpost',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'podcast',         $condition);
+			$this->db_delete(TABLE_PREFIX, 'forumprefixset',  $condition);
+
+			require_once(DIR . '/includes/functions_databuild.php');
+
+			// delete threads in specified forums
+			$threads = $this->dbobject->query_read_slave("SELECT * FROM " . TABLE_PREFIX . "thread WHERE $condition");
+			while ($thread = $this->dbobject->fetch_array($threads))
+			{
+				$threadman =& datamanager_init('Thread', $this->registry, ERRTYPE_SILENT, 'threadpost');
+				$threadman->set_existing($thread);
+				$threadman->set_info('skip_moderator_log', true);
+				$threadman->delete($this->registry->forumcache["$thread[forumid]"]['options'] & $this->registry->bf_misc_forumoptions['countposts']);
+				unset($threadman);
+			}
+			$this->dbobject->free_result($threads);
+
+			$this->db_delete(TABLE_PREFIX, 'forum', $condition);
+
+			build_forum_permissions();
+
+			($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_university_data_delete')) ? eval($hook) : false;
+			*/
+		}
+	}
+}
+
+
+/**
+* Class to do data save/delete operations for Universities
+*
+* @package	PHPKD
+* @version	$Revision$
+* @date		$Date$
+*/
+class vB_DataManager_PHPKD_EUNI_PhD_College extends vB_DataManager_PHPKD_EUNI_PhD
+{
+/**
+	* Array of recognised and required fields for colleges, and their types
+	*
+	* @var	array
+	*/
+	var $validfields = array(
+		'uid'               => array(TYPE_UINT,       REQ_INCR, VF_METHOD, 'verify_nonzero'),
+		'styleid'           => array(TYPE_INT,        REQ_NO,   'if ($data < 0) { $data = 0; } return true;'),
+		'title'             => array(TYPE_STR,        REQ_YES,  VF_METHOD),
+		'title_clean'       => array(TYPE_STR,        REQ_YES),
+		'description'       => array(TYPE_STR,        REQ_NO,   VF_METHOD),
+		'description_clean' => array(TYPE_STR,        REQ_NO),
+		'options'           => array(TYPE_ARRAY_BOOL, REQ_AUTO),
+		'displayorder'      => array(TYPE_UINT,       REQ_NO),
+		'departmentcount'   => array(TYPE_UINT,       REQ_NO),
+		'professorcount'    => array(TYPE_UINT,       REQ_NO),
+		'itemcount'         => array(TYPE_UINT,       REQ_NO),
+		'studentcount'      => array(TYPE_UINT,       REQ_NO),
+		'parentid'          => array(TYPE_INT,        REQ_YES,  VF_METHOD),
+		'password'          => array(TYPE_NOTRIM,     REQ_NO),
+		'link'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'logo'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'parentlist'        => array(TYPE_STR,        REQ_AUTO, 'return preg_match(\'#^(\d+,)*-1$#\', $data);'),
+		'childlist'         => array(TYPE_STR,        REQ_AUTO),
+		'showprivate'       => array(TYPE_UINT,       REQ_NO,   'if ($data > 3) { $data = 0; } return true;')
+	);
+
+	/**
+	* Array of field names that are bitfields, together with the name of the variable in the registry with the definitions.
+	* For example: var $bitfields = array('options' => 'bf_misc_useroptions', 'permissions' => 'bf_misc_moderatorpermissions')
+	*
+	* @var	array
+	*/
+	var $bitfields = array('options' => 'bf_misc_phpkdeuniphdcollege');
+
+	/**
+	* The main table this class deals with
+	*
+	* @var	string
+	*/
+	var $table = 'phpkd_euni_phd_college';
+
+	/**
+	* Array to store stuff to save to college table
+	*
+	* @var	array
+	*/
+	var $phpkd_euni_phd_college = array();
+
+	/**
+	* Condition template for update query
+	*
+	* @var	array
+	*/
+	var $condition_construct = array('cid = %1$d', 'cid');
+
+	/**
+	* Constructor - checks that the registry object has been passed correctly.
+	*
+	* @param	vB_Registry	Instance of the vBulletin data registry object - expected to have the database object as one of its $this->db member.
+	* @param	integer		One of the ERRTYPE_x constants
+	*/
+	function vB_DataManager_PHPKD_EUNI_PhD_College(&$registry, $errtype = ERRTYPE_STANDARD)
+	{
+		parent::vB_DataManager($registry, $errtype);
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_college_data_start')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Verifies that the parent college specified exists and is a valid parent for this college
+	*
+	* @param	integer	Parent College ID
+	*
+	* @return	boolean	Returns true if the parent id is valid, and the parent college specified exists
+	*/
+	function verify_parentid(&$parentid)
+	{
+		if ($parentid <= 0)
+		{
+			$this->error('phpkd_euni_phd_cant_parent_college_to_none');
+			return false;
+		}
+		else if (!isset($this->registry->phpkdeuniphduniversity["$parentid"]))
+		{
+			$this->error('phpkd_euni_phd_invalid_university_specified');
+			return false;
+		}
+		else
+		{
+			// no condition specified, so it's not an existing forum...
+			return true;
+		}
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed for each record updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_each($doquery = true)
+	{
+		if ($this->condition AND $this->info['applypwdtochild'] AND isset($this->phpkd_euni_phd_college['password']) AND $this->phpkd_euni_phd_college['password'] != $this->existing['password'])
+		{
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_college
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_college['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['cid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_department
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_college['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['cid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_professor
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_college['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['cid'] . "', parentlist)
+    		");
+
+			$this->dbobject->query_write("
+         		UPDATE " . TABLE_PREFIX . "phpkd_euni_phd_item
+         		SET password = '" . $this->dbobject->escape_string($this->phpkd_euni_phd_college['password']) . "'
+         		WHERE FIND_IN_SET('" . $this->existing['cid'] . "', parentlist)
+    		");
+		}
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_college_data_postsave')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed once after all records are updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_once($doquery = true)
+	{
+		if (empty($this->info['disable_cache_rebuild']))
+		{
+			require_once(DIR . '/includes/adminfunctions_phpkd_euni_phd.php');
+			build_college_permissions();
+		}
+	}
+
+
+	/**
+	* Deletes a college and its associated data from the database
+	*/
+	function delete()
+	{
+		// fetch list of colleges and the related departments to delete
+		$collegelist = '';
+		$departmentlist = '';
+
+		$colleges = $this->dbobject->query_read_slave("SELECT cid FROM " . TABLE_PREFIX . "phpkd_euni_phd_college WHERE " . $this->condition);
+		while($thiscollege = $this->dbobject->fetch_array($colleges))
+		{
+			$collegelist .= ',' . $thiscollege['cid'];
+		}
+		$this->dbobject->free_result($colleges);
+
+		$collegelist = substr($collegelist, 1);
+		$departmentlist = substr($departmentlist, 1);
+
+		if ($collegelist == '')
+		{
+			// nothing to do
+			$this->error('phpkd_euni_phd_invalid_college_specified');
+		}
+		else
+		{
+			/*
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			 * Deleting related Data
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			$condition = "cid IN ($collegelist)";
+
+			// delete from extra data tables
+			$this->db_delete(TABLE_PREFIX, 'forumpermission', $condition);
+			$this->db_delete(TABLE_PREFIX, 'access',          $condition);
+			$this->db_delete(TABLE_PREFIX, 'moderator',       $condition);
+			$this->db_delete(TABLE_PREFIX, 'announcement',    $condition);
+			$this->db_delete(TABLE_PREFIX, 'subscribeforum',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'tachyforumpost',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'podcast',         $condition);
+			$this->db_delete(TABLE_PREFIX, 'forumprefixset',  $condition);
+
+			require_once(DIR . '/includes/functions_databuild.php');
+
+			// delete threads in specified forums
+			$threads = $this->dbobject->query_read_slave("SELECT * FROM " . TABLE_PREFIX . "thread WHERE $condition");
+			while ($thread = $this->dbobject->fetch_array($threads))
+			{
+				$threadman =& datamanager_init('Thread', $this->registry, ERRTYPE_SILENT, 'threadpost');
+				$threadman->set_existing($thread);
+				$threadman->set_info('skip_moderator_log', true);
+				$threadman->delete($this->registry->forumcache["$thread[forumid]"]['options'] & $this->registry->bf_misc_forumoptions['countposts']);
+				unset($threadman);
+			}
+			$this->dbobject->free_result($threads);
+
+			$this->db_delete(TABLE_PREFIX, 'forum', $condition);
+
+			build_forum_permissions();
+
+			($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_college_data_delete')) ? eval($hook) : false;
+			*/
+		}
+	}
+}
+
+
+/**
+* Class to do data save/delete operations for Departments
+*
+* @package	PHPKD
+* @version	$Revision$
+* @date		$Date$
+*/
+class vB_DataManager_PHPKD_EUNI_PhD_Department extends vB_DataManager_PHPKD_EUNI_PhD
+{
+/**
+	* Array of recognised and required fields for departments, and their types
+	*
+	* @var	array
+	*/
+	var $validfields = array(
+		'uid'               => array(TYPE_UINT,       REQ_INCR, VF_METHOD, 'verify_nonzero'),
+		'styleid'           => array(TYPE_INT,        REQ_NO,   'if ($data < 0) { $data = 0; } return true;'),
+		'title'             => array(TYPE_STR,        REQ_YES,  VF_METHOD),
+		'title_clean'       => array(TYPE_STR,        REQ_YES),
+		'description'       => array(TYPE_STR,        REQ_NO,   VF_METHOD),
+		'description_clean' => array(TYPE_STR,        REQ_NO),
+		'options'           => array(TYPE_ARRAY_BOOL, REQ_AUTO),
+		'displayorder'      => array(TYPE_UINT,       REQ_NO),
+		'professorcount'    => array(TYPE_UINT,       REQ_NO),
+		'itemcount'         => array(TYPE_UINT,       REQ_NO),
+		'studentcount'      => array(TYPE_UINT,       REQ_NO),
+		'parentid'          => array(TYPE_INT,        REQ_YES,  VF_METHOD),
+		'password'          => array(TYPE_NOTRIM,     REQ_NO),
+		'link'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'logo'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'parentlist'        => array(TYPE_STR,        REQ_AUTO, 'return preg_match(\'#^(\d+,)*-1$#\', $data);'),
+		'showprivate'       => array(TYPE_UINT,       REQ_NO,   'if ($data > 3) { $data = 0; } return true;')
+	);
+
+	/**
+	* Array of field names that are bitfields, together with the name of the variable in the registry with the definitions.
+	* For example: var $bitfields = array('options' => 'bf_misc_useroptions', 'permissions' => 'bf_misc_moderatorpermissions')
+	*
+	* @var	array
+	*/
+	var $bitfields = array('options' => 'bf_misc_phpkdeuniphddepartment');
+
+	/**
+	* The main table this class deals with
+	*
+	* @var	string
+	*/
+	var $table = 'phpkd_euni_phd_department';
+
+	/**
+	* Array to store stuff to save to department table
+	*
+	* @var	array
+	*/
+	var $phpkd_euni_phd_department = array();
+
+	/**
+	* Condition template for update query
+	*
+	* @var	array
+	*/
+	var $condition_construct = array('did = %1$d', 'did');
+
+	/**
+	* Constructor - checks that the registry object has been passed correctly.
+	*
+	* @param	vB_Registry	Instance of the vBulletin data registry object - expected to have the database object as one of its $this->db member.
+	* @param	integer		One of the ERRTYPE_x constants
+	*/
+	function vB_DataManager_PHPKD_EUNI_PhD_Department(&$registry, $errtype = ERRTYPE_STANDARD)
+	{
+		parent::vB_DataManager($registry, $errtype);
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_department_data_start')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Verifies that the parent department specified exists and is a valid parent for this department
+	*
+	* @param	integer	Parent Department ID
+	*
+	* @return	boolean	Returns true if the parent id is valid, and the parent department specified exists
+	*/
+	function verify_parentid(&$parentid)
+	{
+		if ($parentid <= 0)
+		{
+			$this->error('phpkd_euni_phd_cant_parent_department_to_none');
+			return false;
+		}
+		else if (!isset($this->registry->phpkdeuniphduniversity["$parentid"]))
+		{
+			$this->error('phpkd_euni_phd_invalid_college_specified');
+			return false;
+		}
+		else
+		{
+			// no condition specified, so it's not an existing forum...
+			return true;
+		}
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed for each record updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_each($doquery = true)
+	{
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_department_data_postsave')) ? eval($hook) : false;
+	}
+
+
+	/**
+	* Additional data to update after a save call (such as denormalized values in other tables).
+	* In batch updates, is executed once after all records are updated.
+	*
+	* @param	boolean	Do the query?
+	*/
+	function post_save_once($doquery = true)
+	{
+		if (empty($this->info['disable_cache_rebuild']))
+		{
+			require_once(DIR . '/includes/adminfunctions_phpkd_euni_phd.php');
+			build_department_permissions();
+		}
+	}
+
+
+	/**
+	* Deletes a department and its associated data from the database
+	*/
+	function delete()
+	{
+		// fetch list of departments and related data
+		$departmentlist = '';
+
+		$departments = $this->dbobject->query_read_slave("SELECT did FROM " . TABLE_PREFIX . "phpkd_euni_phd_department WHERE " . $this->condition);
+		while($thisdepartment = $this->dbobject->fetch_array($departments))
+		{
+			$departmentlist .= ',' . $thisdepartment['did'];
+		}
+		$this->dbobject->free_result($departments);
+
+		$departmentlist = substr($departmentlist, 1);
+
+		if ($departmentlist == '')
+		{
+			// nothing to do
+			$this->error('phpkd_euni_phd_invalid_department_specified');
+		}
+		else
+		{
+			/*
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			 * Deleting related Data
+			 ~~~~~~~~~~~~~~~~~~~~~~~~~
+			$condition = "did IN ($departmentlist)";
+
+			// delete from extra data tables
+			$this->db_delete(TABLE_PREFIX, 'forumpermission', $condition);
+			$this->db_delete(TABLE_PREFIX, 'access',          $condition);
+			$this->db_delete(TABLE_PREFIX, 'moderator',       $condition);
+			$this->db_delete(TABLE_PREFIX, 'announcement',    $condition);
+			$this->db_delete(TABLE_PREFIX, 'subscribeforum',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'tachyforumpost',  $condition);
+			$this->db_delete(TABLE_PREFIX, 'podcast',         $condition);
+			$this->db_delete(TABLE_PREFIX, 'forumprefixset',  $condition);
+
+			require_once(DIR . '/includes/functions_databuild.php');
+
+			// delete threads in specified forums
+			$threads = $this->dbobject->query_read_slave("SELECT * FROM " . TABLE_PREFIX . "thread WHERE $condition");
+			while ($thread = $this->dbobject->fetch_array($threads))
+			{
+				$threadman =& datamanager_init('Thread', $this->registry, ERRTYPE_SILENT, 'threadpost');
+				$threadman->set_existing($thread);
+				$threadman->set_info('skip_moderator_log', true);
+				$threadman->delete($this->registry->forumcache["$thread[forumid]"]['options'] & $this->registry->bf_misc_forumoptions['countposts']);
+				unset($threadman);
+			}
+			$this->dbobject->free_result($threads);
+
+			$this->db_delete(TABLE_PREFIX, 'forum', $condition);
+
+			build_forum_permissions();
+
+			($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_department_data_delete')) ? eval($hook) : false;
+			*/
+		}
+	}
+}
+
+
+/**
+* Class to do data save/delete operations for Universities
+*
+* @package	PHPKD
+* @version	$Revision$
+* @date		$Date$
+*/
+class vB_DataManager_PHPKD_EUNI_PhD_ASD extends vB_DataManager_PHPKD_EUNI_PhD
+{
+/**
+	* Array of recognised and required fields for universities, and their types
+	*
+	* @var	array
+	*/
+	var $validfields = array(
+		'uid'               => array(TYPE_UINT,       REQ_INCR, VF_METHOD, 'verify_nonzero'),
+		'styleid'           => array(TYPE_INT,        REQ_NO,   'if ($data < 0) { $data = 0; } return true;'),
+		'title'             => array(TYPE_STR,        REQ_YES,  VF_METHOD),
+		'title_clean'       => array(TYPE_STR,        REQ_YES),
+		'description'       => array(TYPE_STR,        REQ_NO,   VF_METHOD),
+		'description_clean' => array(TYPE_STR,        REQ_NO),
+		'options'           => array(TYPE_ARRAY_BOOL, REQ_AUTO),
+		'displayorder'      => array(TYPE_UINT,       REQ_NO),
+		'collegecount'      => array(TYPE_UINT,       REQ_NO),
+		'departmentcount'   => array(TYPE_UINT,       REQ_NO),
+		'professorcount'    => array(TYPE_UINT,       REQ_NO),
+		'itemcount'         => array(TYPE_UINT,       REQ_NO),
+		'studentcount'      => array(TYPE_UINT,       REQ_NO),
+		'password'          => array(TYPE_NOTRIM,     REQ_NO),
+		'link'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'logo'              => array(TYPE_STR,        REQ_NO), // do not use verify_link on this -- relative redirects are prefectly valid
+		'childlist'         => array(TYPE_STR,        REQ_AUTO),
+		'showprivate'       => array(TYPE_UINT,       REQ_NO,   'if ($data > 3) { $data = 0; } return true;')
+	);
+
+	/**
+	* Array of field names that are bitfields, together with the name of the variable in the registry with the definitions.
+	* For example: var $bitfields = array('options' => 'bf_misc_useroptions', 'permissions' => 'bf_misc_moderatorpermissions')
+	*
+	* @var	array
+	*/
+	var $bitfields = array('options' => 'bf_misc_phpkdeuniphduniversity');
+
+	/**
+	* The main table this class deals with
+	*
+	* @var	string
+	*/
+	var $table = 'phpkd_euni_phd_university';
+
+	/**
+	* Array to store stuff to save to university table
+	*
+	* @var	array
+	*/
+	var $phpkd_euni_phd_university = array();
+
+	/**
+	* Condition template for update query
+	*
+	* @var	array
+	*/
+	var $condition_construct = array('uid = %1$d', 'uid');
 
 	/**
 	* Constructor - checks that the registry object has been passed correctly.
@@ -227,7 +843,7 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 	*/
 	function verify_parentid(&$parentid)
 	{
-		if ($parentid == $this->fetch_field('forumid'))
+		if ($parentid == $this->fetch_field('uid'))
 		{
 			$this->error('cant_parent_forum_to_self');
 			return false;
@@ -244,7 +860,7 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 		}
 		else if ($this->condition !== null)
 		{
-			return $this->is_subforum_of($this->fetch_field('forumid'), $parentid);
+			return $this->is_subforum_of($this->fetch_field('uid'), $parentid);
 		}
 		else
 		{
@@ -380,8 +996,6 @@ class vB_DataManager_PHPKD_EUNI_PhD_University extends vB_DataManager_PHPKD_EUNI
 		}
 	}
 }
-
-
 /*=================================================================================*\
 || ############################################################################### ||
 || # Version.: 1.0.0

@@ -12,12 +12,12 @@
 				<bitfield name="canadminstudents"     phrase="phpkd_euni_phd_can_administer_students"    >32</bitfield>
 			</group>
 			<group name="phpkdeuniphdmodperms">
-				<bitfield name="canmoderateuniversities">1</bitfield>
-				<bitfield name="canmoderatecolleges"    >2</bitfield>
-				<bitfield name="canmoderatedepartments" >4</bitfield>
-				<bitfield name="canmoderateprofessors"  >8</bitfield>
-				<bitfield name="canmoderateitems"       >16</bitfield>
-				<bitfield name="canmoderatestudents"    >32</bitfield>
+				<bitfield name="canmoderateuniversities" phrase="phpkd_euni_phd_can_moderate_universities">1</bitfield>
+				<bitfield name="canmoderatecolleges"     phrase="phpkd_euni_phd_can_moderate_colleges"    >2</bitfield>
+				<bitfield name="canmoderatedepartments"  phrase="phpkd_euni_phd_can_moderate_departments" >4</bitfield>
+				<bitfield name="canmoderateprofessors"   phrase="phpkd_euni_phd_can_moderate_professors"  >8</bitfield>
+				<bitfield name="canmoderateitems"        phrase="phpkd_euni_phd_can_moderate_items"       >16</bitfield>
+				<bitfield name="canmoderatestudents"     phrase="phpkd_euni_phd_can_moderate_students"    >32</bitfield>
 			</group>
 			<group name="phpkdeuniphduserperms">
 				<bitfield name="canviewuniversities"   phrase="phpkd_euni_phd_can_view_universities"   >1</bitfield>

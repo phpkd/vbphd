@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<navgroups product="phpkd_euni_phd" master="true">
+<navgroups product="phpkd_euni_phd">
 
 	<navgroup phrase="phpkd_euni_phd_menu" permissions="canadminuniversities" hr="true" displayorder="42">
 
 		<navoption displayorder="10">
 			<phrase>phpkd_euni_phd_options</phrase>
-			<link>options.php?do=options&dogroup=phpkd_euni_phd</link>
+			<link>options.php?do=options&amp;dogroup=phpkd_euni_phd</link>
 		</navoption>
 
 		<navoption displayorder="20">

@@ -23,12 +23,12 @@ define('CVS_REVISION', '$RCSfile$ - $Revision$');
 
 // #################### PRE-CACHE TEMPLATES AND DATA ######################
 $phrasegroups = array('phpkd_euni_phd_acp');
-$specialtemplates = array();
+$specialtemplates = array('phpkdeuniphduniversity');
 
 // ########################## REQUIRE BACK-END ############################
 require_once('./global.php');
 require_once(DIR . '/includes/adminfunctions_template.php');
-require_once(DIR . '/includes/adminfunctions_euni_phd.php');
+require_once(DIR . '/includes/adminfunctions_phpkd_euni_phd.php');
 
 // ######################## CHECK ADMIN PERMISSIONS #######################
 if (!can_administer('canadminuniversities'))
@@ -74,7 +74,7 @@ if (empty($_REQUEST['do']))
 
 ($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_start')) ? eval($hook) : false;
 
-// ###################### Start add #######################
+// ###################### Start add university #######################
 if ($_REQUEST['do'] == 'addu' OR $_REQUEST['do'] == 'editu')
 {
 	$vbulletin->input->clean_array_gpc('r', array(
@@ -86,7 +86,7 @@ if ($_REQUEST['do'] == 'addu' OR $_REQUEST['do'] == 'editu')
 	{
 		// get a list of other universities to base this one off of
 		print_form_header('phpkd_euni_phd', 'addu');
-		print_description_row(construct_table_help_button('duid') . '<b>' . $vbphrase['phpkd_euni_phd_create_university_based_off_of_university'] . '</b> <select name="duid" tabindex="1" class="bginput">' . construct_university_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
+		print_description_row(construct_table_help_button('duid') . '<b>' . $vbphrase['phpkd_euni_phd_create_university_based_off_of_university'] . '</b> <select name="duid" tabindex="1" class="bginput">' . construct_university_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['phpkd_euni_phd_go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
 		print_table_footer();
 		// Set Defaults;
 		$university = array(
@@ -127,20 +127,18 @@ if ($_REQUEST['do'] == 'addu' OR $_REQUEST['do'] == 'editu')
 			print_stop_message('phpkd_euni_phd_invalid_university_specified');
 		}
 		print_form_header('phpkd_euni_phd', 'updateu');
-		print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['phpkd_euni_phd_university'], $university['title'], $university['uid']));
+		print_table_header(construct_phrase($vbphrase['phpkd_euni_phd_x_y_id_z'], $vbphrase['phpkd_euni_phd_university'], $university['title'], $university['uid']));
 		construct_hidden_code('uid', $vbulletin->GPC['uid']);
 	}
 
 	$university['title'] = str_replace('&amp;', '&', $university['title']);
 	$university['description'] = str_replace('&amp;', '&', $university['description']);
 
-	print_input_row($vbphrase['phpkd_euni_phd_title'], 'university[title]', $university['title']);
-	print_textarea_row($vbphrase['phpkd_euni_phd_description'], 'university[description]', $university['description']);
+	print_input_row($vbphrase['phpkd_euni_phd_university_title'], 'university[title]', $university['title']);
+	print_textarea_row($vbphrase['phpkd_euni_phd_university_description'], 'university[description]', $university['description']);
 	print_input_row($vbphrase['phpkd_euni_phd_university_link'], 'university[link]', $university['link']);
 	print_input_row($vbphrase['phpkd_euni_phd_university_logo'], 'university[logo]', $university['logo']);
 	print_input_row("$vbphrase[phpkd_euni_phd_display_order]<dfn>$vbphrase[phpkd_euni_phd_zero_equals_no_display]</dfn>", 'university[displayorder]', $university['displayorder']);
-	print_select_row($vbphrase['phpkd_euni_phd_show_private_university'], 'university[showprivate]', array($vbphrase['phpkd_euni_phd_use_default'], $vbphrase['no'], $vbphrase['phpkd_euni_phd_yes_hide_counters'], $vbphrase['phpkd_euni_phd_yes_display_counters']), $university['showprivate']);
-
 
 	print_table_header($vbphrase['phpkd_euni_phd_style_options']);
 
@@ -149,26 +147,27 @@ if ($_REQUEST['do'] == 'addu' OR $_REQUEST['do'] == 'editu')
 		$university['styleid'] = -1; // to get the "use default style" option selected
 	}
 	print_style_chooser_row('university[styleid]', $university['styleid'], $vbphrase['phpkd_euni_phd_use_default_style'], $vbphrase['phpkd_euni_phd_custom_university_style'], 1);
-	print_yes_no_row($vbphrase['phpkd_euni_phd_override_style_choice'], 'university[options][styleoverride]', $university['styleoverride']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_university_override_style_choice'], 'university[options][styleoverride]', $university['styleoverride']);
 
 	print_table_header($vbphrase['phpkd_euni_phd_access_options']);
 	print_yes_no_row($vbphrase['phpkd_euni_phd_university_is_active'], 'university[options][active]', $university['active']);
-	print_yes_no_row($vbphrase['phpkd_euni_phd_can_have_content'], 'university[options][canhavecontent]', $university['canhavecontent']);
+	print_select_row($vbphrase['phpkd_euni_phd_show_private_university'], 'university[showprivate]', array($vbphrase['phpkd_euni_phd_use_default'], $vbphrase['phpkd_euni_phd_no'], $vbphrase['phpkd_euni_phd_yes_hide_counters'], $vbphrase['phpkd_euni_phd_yes_display_counters']), $university['showprivate']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_university_can_have_content'], 'university[options][canhavecontent]', $university['canhavecontent']);
 	print_yes_no_row($vbphrase['phpkd_euni_phd_count_content_in_university'], 'university[options][countcontent]', $university['countcontent']);
 	print_yes_no_row($vbphrase['phpkd_euni_phd_show_university_on_university_jump'], 'university[options][showonuniversityjump]', $university['showonuniversityjump']);
 	print_input_row($vbphrase['phpkd_euni_phd_university_password'], 'university[password]', $university['password']);
 	if ($_REQUEST['do'] == 'editu')
 	{
-		print_yes_no_row($vbphrase['phpkd_euni_phd_apply_password_to_children'], 'applypwdtochild', 0);
+		print_yes_no_row($vbphrase['phpkd_euni_phd_apply_password_to_children_colleges'], 'applypwdtochild', 0);
 	}
-	print_yes_no_row($vbphrase['phpkd_euni_phd_can_have_password'], 'university[options][canhavepassword]', $university['canhavepassword']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_university_can_have_password'], 'university[options][canhavepassword]', $university['canhavepassword']);
 
 	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_editu_form')) ? eval($hook) : false;
 
 	print_submit_row($vbphrase['phpkd_euni_phd_save']);
 }
 
-// ###################### Start update #######################
+// ###################### Start update university #######################
 if ($_POST['do'] == 'updateu')
 {
 	$vbulletin->input->clean_array_gpc('p', array(
@@ -177,11 +176,11 @@ if ($_POST['do'] == 'updateu')
 		'university'        => TYPE_ARRAY,
 	));
 
-	$universitydata =& datamanager_init('PHPKD_EUNI_PhD_University', $vbulletin, ERRTYPE_CP);
+	$universitydata =& datamanager_init('PHPKD_EUNI_PhD_University', $vbulletin, ERRTYPE_CP, 'PHPKD_EUNI_PhD');
 
 	if ($vbulletin->GPC['uid'])
 	{
-		$universitydata->set_existing($vbulletin->universitycache[$vbulletin->GPC['uid']]);
+		$universitydata->set_existing($vbulletin->phpkdeuniphduniversity[$vbulletin->GPC['uid']]);
 		$universitydata->set_info('applypwdtochild', $vbulletin->GPC['applypwdtochild']);
 	}
 
@@ -211,6 +210,299 @@ if ($_POST['do'] == 'updateu')
 	define('CP_REDIRECT', "phpkd_euni_phd.php?do=manage&amp;u=" . $vbulletin->GPC['uid'] . "#university" . $vbulletin->GPC['uid']);
 	print_stop_message('phpkd_euni_phd_saved_university_x_successfully', $vbulletin->GPC['university']['title']);
 }
+
+// ###################### Start add college #######################
+if ($_REQUEST['do'] == 'addc' OR $_REQUEST['do'] == 'editc')
+{
+	$vbulletin->input->clean_array_gpc('r', array(
+		'cid'      => TYPE_UINT,
+		'dcid'     => TYPE_UINT,
+		'parentid' => TYPE_UINT
+	));
+
+	if ($_REQUEST['do'] == 'addc')
+	{
+		// get a list of other colleges to base this one off of
+		print_form_header('phpkd_euni_phd', 'addc');
+		print_description_row(construct_table_help_button('dcid') . '<b>' . $vbphrase['phpkd_euni_phd_create_college_based_off_of_college'] . '</b> <select name="dcid" tabindex="1" class="bginput">' . construct_college_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['phpkd_euni_phd_go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
+		print_table_footer();
+		// Set Defaults;
+		$college = array(
+			'title' => '',
+			'description' => '',
+			'link' => '',
+			'logo' => '',
+			'displayorder' => 1,
+			'parentid' => $vbulletin->GPC['parentid'],
+			'showprivate' => 0,
+			'styleid' => '',
+			'styleoverride' => 0,
+			'password' => '',
+			'canhavepassword' => 1,
+			'canhavecontent' => 1,
+			'active' => 1,
+			'countcontent' => 1,
+			'showoncollegejump' => 1
+		);
+
+		if (!empty($vbulletin->GPC['dcid']))
+		{
+			$newcollege = fetch_collegeinfo($vbulletin->GPC['dcid']);
+			foreach (array_keys($college) AS $title)
+			{
+				$college["$title"] = $newcollege["$title"];
+			}
+		}
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_add_default')) ? eval($hook) : false;
+
+		print_form_header('phpkd_euni_phd', 'updatec');
+		print_table_header($vbphrase['phpkd_euni_phd_add_new_college']);
+	}
+	else
+	{
+		if (!($college = fetch_collegeinfo($vbulletin->GPC['cid'], false)))
+		{
+			print_stop_message('phpkd_euni_phd_invalid_college_specified');
+		}
+		print_form_header('phpkd_euni_phd', 'updatec');
+		print_table_header(construct_phrase($vbphrase['phpkd_euni_phd_x_y_id_z'], $vbphrase['phpkd_euni_phd_college'], $college['title'], $college['cid']));
+		construct_hidden_code('cid', $vbulletin->GPC['cid']);
+	}
+
+	$college['title'] = str_replace('&amp;', '&', $college['title']);
+	$college['description'] = str_replace('&amp;', '&', $college['description']);
+
+	print_input_row($vbphrase['phpkd_euni_phd_college_title'], 'college[title]', $college['title']);
+	print_textarea_row($vbphrase['phpkd_euni_phd_college_description'], 'college[description]', $college['description']);
+	print_input_row($vbphrase['phpkd_euni_phd_college_link'], 'college[link]', $college['link']);
+	print_input_row($vbphrase['phpkd_euni_phd_college_logo'], 'college[logo]', $college['logo']);
+	print_input_row("$vbphrase[phpkd_euni_phd_display_order]<dfn>$vbphrase[phpkd_euni_phd_zero_equals_no_display]</dfn>", 'college[displayorder]', $college['displayorder']);
+
+	if ($vbulletin->GPC['uid'] != -1)
+	{
+		print_university_chooser($vbphrase['phpkd_euni_phd_parent_university'], 'college[parentid]', $college['parentid'], $vbphrase['phpkd_euni_phd_no_one']);
+	}
+	else
+	{
+		construct_hidden_code('parentid', 0);
+	}
+
+	print_table_header($vbphrase['phpkd_euni_phd_style_options']);
+
+	if ($college['styleid'] == 0)
+	{
+		$college['styleid'] = -1; // to get the "use default style" option selected
+	}
+	print_style_chooser_row('college[styleid]', $college['styleid'], $vbphrase['phpkd_euni_phd_use_default_style'], $vbphrase['phpkd_euni_phd_custom_college_style'], 1);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_college_override_style_choice'], 'college[options][styleoverride]', $college['styleoverride']);
+
+	print_table_header($vbphrase['phpkd_euni_phd_access_options']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_college_is_active'], 'college[options][active]', $college['active']);
+	print_select_row($vbphrase['phpkd_euni_phd_show_private_college'], 'college[showprivate]', array($vbphrase['phpkd_euni_phd_use_default'], $vbphrase['phpkd_euni_phd_no'], $vbphrase['phpkd_euni_phd_yes_hide_counters'], $vbphrase['phpkd_euni_phd_yes_display_counters']), $college['showprivate']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_college_can_have_content'], 'college[options][canhavecontent]', $college['canhavecontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_count_content_in_college'], 'college[options][countcontent]', $college['countcontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_show_college_on_college_jump'], 'college[options][showoncollegejump]', $college['showoncollegejump']);
+	print_input_row($vbphrase['phpkd_euni_phd_college_password'], 'college[password]', $college['password']);
+	if ($_REQUEST['do'] == 'editc')
+	{
+		print_yes_no_row($vbphrase['phpkd_euni_phd_apply_password_to_children_departments'], 'applypwdtochild', 0);
+	}
+	print_yes_no_row($vbphrase['phpkd_euni_phd_college_can_have_password'], 'college[options][canhavepassword]', $college['canhavepassword']);
+
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_editc_form')) ? eval($hook) : false;
+
+	print_submit_row($vbphrase['phpkd_euni_phd_save']);
+}
+
+// ###################### Start update college #######################
+if ($_POST['do'] == 'updatec')
+{
+	$vbulletin->input->clean_array_gpc('p', array(
+		'cid'               => TYPE_UINT,
+		'applypwdtochild'   => TYPE_BOOL,
+		'college'           => TYPE_ARRAY,
+	));
+
+	$collegedata =& datamanager_init('PHPKD_EUNI_PhD_College', $vbulletin, ERRTYPE_CP, 'PHPKD_EUNI_PhD');
+
+	if ($vbulletin->GPC['cid'])
+	{
+		$collegedata->set_existing($vbulletin->phpkdeuniphdcollege[$vbulletin->GPC['cid']]);
+		$collegedata->set_info('applypwdtochild', $vbulletin->GPC['applypwdtochild']);
+	}
+
+	foreach ($vbulletin->GPC['college'] AS $varname => $value)
+	{
+		if ($varname == 'options')
+		{
+			foreach ($value AS $key => $val)
+			{
+				$collegedata->set_bitfield('options', $key, $val);
+			}
+		}
+		else
+		{
+			$collegedata->set($varname, $value);
+		}
+	}
+
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_updatec_save')) ? eval($hook) : false;
+
+	$cid = $collegedata->save();
+	if (!$vbulletin->GPC['cid'])
+	{
+		$vbulletin->GPC['cid'] = $cid;
+	}
+
+	define('CP_REDIRECT', "phpkd_euni_phd.php?do=manage&amp;c=" . $vbulletin->GPC['cid'] . "#college" . $vbulletin->GPC['cid']);
+	print_stop_message('phpkd_euni_phd_saved_college_x_successfully', $vbulletin->GPC['college']['title']);
+}
+
+
+// ###################### Start add department #######################
+if ($_REQUEST['do'] == 'addd' OR $_REQUEST['do'] == 'editd')
+{
+	$vbulletin->input->clean_array_gpc('r', array(
+		'did'      => TYPE_UINT,
+		'ddid'     => TYPE_UINT,
+		'parentid' => TYPE_UINT
+	));
+
+	if ($_REQUEST['do'] == 'addd')
+	{
+		// get a list of other departments to base this one off of
+		print_form_header('phpkd_euni_phd', 'addd');
+		print_description_row(construct_table_help_button('ddid') . '<b>' . $vbphrase['phpkd_euni_phd_create_department_based_off_of_department'] . '</b> <select name="ddid" tabindex="1" class="bginput">' . construct_department_chooser() . '</select> <input type="submit" class="button" value="' . $vbphrase['phpkd_euni_phd_go'] . '" tabindex="1" />', 0, 2, 'tfoot', 'center');
+		print_table_footer();
+		// Set Defaults;
+		$department = array(
+			'title' => '',
+			'description' => '',
+			'link' => '',
+			'logo' => '',
+			'displayorder' => 1,
+			'parentid' => $vbulletin->GPC['parentid'],
+			'showprivate' => 0,
+			'styleid' => '',
+			'styleoverride' => 0,
+			'password' => '',
+			'canhavepassword' => 1,
+			'canhavecontent' => 1,
+			'active' => 1,
+			'countcontent' => 1,
+			'showondepartmentjump' => 1
+		);
+
+		if (!empty($vbulletin->GPC['ddid']))
+		{
+			$newdepartment = fetch_departmentinfo($vbulletin->GPC['ddid']);
+			foreach (array_keys($department) AS $title)
+			{
+				$department["$title"] = $newdepartment["$title"];
+			}
+		}
+
+		($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_add_default')) ? eval($hook) : false;
+
+		print_form_header('phpkd_euni_phd', 'updated');
+		print_table_header($vbphrase['phpkd_euni_phd_add_new_department']);
+	}
+	else
+	{
+		if (!($department = fetch_departmentinfo($vbulletin->GPC['did'], false)))
+		{
+			print_stop_message('phpkd_euni_phd_invalid_department_specified');
+		}
+		print_form_header('phpkd_euni_phd', 'updated');
+		print_table_header(construct_phrase($vbphrase['phpkd_euni_phd_x_y_id_z'], $vbphrase['phpkd_euni_phd_department'], $department['title'], $department['did']));
+		construct_hidden_code('did', $vbulletin->GPC['did']);
+	}
+
+	$department['title'] = str_replace('&amp;', '&', $department['title']);
+	$department['description'] = str_replace('&amp;', '&', $department['description']);
+
+	print_input_row($vbphrase['phpkd_euni_phd_department_title'], 'department[title]', $department['title']);
+	print_textarea_row($vbphrase['phpkd_euni_phd_department_description'], 'department[description]', $department['description']);
+	print_input_row($vbphrase['phpkd_euni_phd_department_link'], 'department[link]', $department['link']);
+	print_input_row($vbphrase['phpkd_euni_phd_department_logo'], 'department[logo]', $department['logo']);
+	print_input_row("$vbphrase[phpkd_euni_phd_display_order]<dfn>$vbphrase[phpkd_euni_phd_zero_equals_no_display]</dfn>", 'department[displayorder]', $department['displayorder']);
+
+	if ($vbulletin->GPC['uid'] != -1)
+	{
+		print_college_chooser($vbphrase['phpkd_euni_phd_parent_college'], 'department[parentid]', $department['parentid'], $vbphrase['phpkd_euni_phd_no_one']);
+	}
+	else
+	{
+		construct_hidden_code('parentid', 0);
+	}
+
+	print_table_header($vbphrase['phpkd_euni_phd_style_options']);
+
+	if ($department['styleid'] == 0)
+	{
+		$department['styleid'] = -1; // to get the "use default style" option selected
+	}
+	print_style_chooser_row('department[styleid]', $department['styleid'], $vbphrase['phpkd_euni_phd_use_default_style'], $vbphrase['phpkd_euni_phd_custom_department_style'], 1);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_department_override_style_choice'], 'department[options][styleoverride]', $department['styleoverride']);
+
+	print_table_header($vbphrase['phpkd_euni_phd_access_options']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_department_is_active'], 'department[options][active]', $department['active']);
+	print_select_row($vbphrase['phpkd_euni_phd_show_private_department'], 'department[showprivate]', array($vbphrase['phpkd_euni_phd_use_default'], $vbphrase['phpkd_euni_phd_no'], $vbphrase['phpkd_euni_phd_yes_hide_counters'], $vbphrase['phpkd_euni_phd_yes_display_counters']), $department['showprivate']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_department_can_have_content'], 'department[options][canhavecontent]', $department['canhavecontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_count_content_in_department'], 'department[options][countcontent]', $department['countcontent']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_show_department_on_department_jump'], 'department[options][showondepartmentjump]', $department['showondepartmentjump']);
+	print_input_row($vbphrase['phpkd_euni_phd_department_password'], 'department[password]', $department['password']);
+	print_yes_no_row($vbphrase['phpkd_euni_phd_department_can_have_password'], 'department[options][canhavepassword]', $department['canhavepassword']);
+
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_editd_form')) ? eval($hook) : false;
+
+	print_submit_row($vbphrase['phpkd_euni_phd_save']);
+}
+
+// ###################### Start update department #######################
+if ($_POST['do'] == 'updated')
+{
+	$vbulletin->input->clean_array_gpc('p', array(
+		'did'               => TYPE_UINT,
+		'department'        => TYPE_ARRAY,
+	));
+
+	$departmentdata =& datamanager_init('PHPKD_EUNI_PhD_Department', $vbulletin, ERRTYPE_CP, 'PHPKD_EUNI_PhD');
+
+	if ($vbulletin->GPC['did'])
+	{
+		$departmentdata->set_existing($vbulletin->phpkdeuniphddepartment[$vbulletin->GPC['did']]);
+	}
+
+	foreach ($vbulletin->GPC['department'] AS $varname => $value)
+	{
+		if ($varname == 'options')
+		{
+			foreach ($value AS $key => $val)
+			{
+				$departmentdata->set_bitfield('options', $key, $val);
+			}
+		}
+		else
+		{
+			$departmentdata->set($varname, $value);
+		}
+	}
+
+	($hook = vBulletinHook::fetch_hook('phpkd_euni_phd_admin_updated_save')) ? eval($hook) : false;
+
+	$did = $departmentdata->save();
+	if (!$vbulletin->GPC['did'])
+	{
+		$vbulletin->GPC['did'] = $did;
+	}
+
+	define('CP_REDIRECT', "phpkd_euni_phd.php?do=manage&amp;d=" . $vbulletin->GPC['did'] . "#department" . $vbulletin->GPC['did']);
+	print_stop_message('phpkd_euni_phd_saved_department_x_successfully', $vbulletin->GPC['department']['title']);
+}
+
+
 // ###################### Start Remove #######################
 
 if ($_REQUEST['do'] == 'remove')
@@ -443,9 +735,9 @@ if ($_REQUEST['do'] == 'manage')
 
 		$forums = array();
 		$expanddata = array('forumid' => -1, 'parentlist' => '');
-		if (is_array($vbulletin->universitycache))
+		if (is_array($vbulletin->phpkdeuniphduniversity))
 		{
-			foreach($vbulletin->universitycache AS $forumid => $university)
+			foreach($vbulletin->phpkdeuniphduniversity AS $forumid => $university)
 			{
 				$forums["$university[forumid]"] = construct_depth_mark($university['depth'], '--') . ' ' . $university['title'];
 				if ($university['forumid'] == $vbulletin->GPC['expandid'])
@@ -465,9 +757,9 @@ if ($_REQUEST['do'] == 'manage')
 			$expandtext = '';
 		}
 
-		if (is_array($vbulletin->universitycache))
+		if (is_array($vbulletin->phpkdeuniphduniversity))
 		{
-			foreach($vbulletin->universitycache AS $key => $university)
+			foreach($vbulletin->phpkdeuniphduniversity AS $key => $university)
 			{
 				$modcount = sizeof($imodcache["$university[forumid]"]);
 				if ($modcount)
@@ -484,7 +776,7 @@ if ($_REQUEST['do'] == 'manage')
 				if (!$vbulletin->options['cp_collapse_forums'] OR $university['forumid'] == $expanddata['forumid'] OR in_array($university['forumid'], $expanddata['parentids']))
 				{
 					$cell[] = "<a name=\"forum$university[forumid]\">&nbsp;</a> $expandtext<b>" . construct_depth_mark($university['depth'],'- - ') . "<a href=\"forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&amp;f=$university[forumid]\">$university[title]</a>" . iif(!empty($university['password']),'*') . " " . iif($university['link'], "(<a href=\"" . htmlspecialchars_uni($university['link']) . "\">" . $vbphrase['link'] . "</a>)") . "</b>";
-					$cell[] = "\n\t<select name=\"f$university[forumid]\" onchange=\"js_forum_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mainoptions) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_forum_jump($university[forumid]);\" />\n\t";
+					$cell[] = "\n\t<select name=\"f$university[forumid]\" onchange=\"js_forum_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mainoptions) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['phpkd_euni_phd_go'] . "\" onclick=\"js_forum_jump($university[forumid]);\" />\n\t";
 					$cell[] = "<input type=\"text\" class=\"bginput\" name=\"order[$university[forumid]]\" value=\"$university[displayorder]\" tabindex=\"1\" size=\"3\" title=\"" . $vbphrase['edit_display_order'] . "\" />";
 
 					$mods = array('no_value' => $vbphrase['moderators'].' (' . sizeof($imodcache["$university[forumid]"]) . ')');
@@ -496,7 +788,7 @@ if ($_REQUEST['do'] == 'manage')
 						}
 					}
 					$mods['add'] = $vbphrase['add_moderator'];
-					$cell[] = "\n\t<select name=\"m$university[forumid]\" onchange=\"js_moderator_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mods) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_moderator_jump($university[forumid]);\" />\n\t";
+					$cell[] = "\n\t<select name=\"m$university[forumid]\" onchange=\"js_moderator_jump($university[forumid]);\" class=\"bginput\">\n" . construct_select_options($mods) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['phpkd_euni_phd_go'] . "\" onclick=\"js_moderator_jump($university[forumid]);\" />\n\t";
 				}
 				else if (
 					$vbulletin->options['cp_collapse_forums'] AND
@@ -547,7 +839,7 @@ if ($_REQUEST['do'] == 'manage')
 		$select .= "</select>\n";
 
 		$cell[] = $select;
-		$cell[] = "\n\t<select name=\"controls\" class=\"bginput\">\n" . construct_select_options($forumoptions1) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['go'] . "\" onclick=\"js_forum_jump(js_returnid());\" />\n\t";
+		$cell[] = "\n\t<select name=\"controls\" class=\"bginput\">\n" . construct_select_options($forumoptions1) . "\t</select><input type=\"button\" class=\"button\" value=\"" . $vbphrase['phpkd_euni_phd_go'] . "\" onclick=\"js_forum_jump(js_returnid());\" />\n\t";
 		print_cells_row($cell);
 		print_table_footer(2, construct_button_code($vbphrase['phpkd_euni_phd_add_new_university'], "forum.php?" . $vbulletin->session->vars['sessionurl'] . "do=add"));
 	}
@@ -571,7 +863,7 @@ if ($_REQUEST['do'] == 'podcast')
 	);
 
 	print_form_header('phpkd_euni_phd', 'updatepodcast');
-	print_table_header(construct_phrase($vbphrase['x_y_id_z'], $vbphrase['podcast_settings'], $university['title'], $university['forumid']));
+	print_table_header(construct_phrase($vbphrase['phpkd_euni_phd_x_y_id_z'], $vbphrase['podcast_settings'], $university['title'], $university['forumid']));
 	construct_hidden_code('forumid', $university['forumid']);
 
 	print_yes_no_row($vbphrase['enabled'], 'enabled', $podcast['enabled']);
